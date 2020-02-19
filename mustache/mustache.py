@@ -7,7 +7,6 @@ from collections import defaultdict
 
 import numpy as np
 
-import straw
 import pandas as pd
 
 import matplotlib.pyplot as plt
