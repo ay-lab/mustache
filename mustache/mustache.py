@@ -376,8 +376,8 @@ def regulator(f, outdir, bed="",
     c = np.zeros((n, n), dtype=np.float32)
     c[x, y] = df[2]
     normalize_sparse(x, y, df[2], c, res)
-    CHUNK_SIZE = max(2000, distance + 5)
-    overlap_size = min(400, CHUNK_SIZE // 5)
+    CHUNK_SIZE = max(2*distance, 2000)
+    overlap_size = distance
 
     if n <= CHUNK_SIZE:
         start = [0]
