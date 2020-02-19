@@ -2,7 +2,7 @@
 
 Mustache(Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Ferhat Ay (ferhatay@lji.org), Stefano Lonardi, and Halil Tuvan Gezer.
 Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps.Mustache uses recent technical advances in scale-space theory in Computer Vision to detect blob-shaped objects in a multi-scale representation of the contact map parametrized by the size of the smoothing kernel. For more information read the full
-paper: <a href="https://academic.oup.com/bioinformatics/article/35/14/i145/5529135">\*\*Selfish: discovery of differential chromatin interactions via a self-similarity measure\*\*</a>.
+paper: <a href="">TBA</a>.
 
 ## Installation and usage
 
@@ -26,7 +26,7 @@ mustache -f /path/to/contact/map.txt \
 
 ### Dependencies
 
-Selfish uses some python packages to accomplish its mission. These are the packages used by selfish:
+Mustach uses some python packages to accomplish its mission. These are the packages used by mustache:
 
 1. numpy
 2. pandas

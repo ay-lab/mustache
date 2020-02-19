@@ -28,8 +28,6 @@ setup(
         'pandas',
         'statsmodels',
         'pathlib',
-        'hic-straw',
-        'cooler'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
