@@ -35,6 +35,8 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 5. scipy
 6. statsmodels
 7. pathlib
+8. cooler
+9. hic-straw
 
 ## Parameters
 

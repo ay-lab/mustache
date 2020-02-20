@@ -21,6 +21,8 @@ setup(
     license='MIT',
     packages=['mustache'],
     install_requires=[
+        'cooler',
+        'hic-straw',
         'numpy',
         'matplotlib',
         'requests',

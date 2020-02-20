@@ -10,6 +10,8 @@ import numpy as np
 
 import pandas as pd
 
+import straw
+import cooler
 import matplotlib.pyplot as plt
 from scipy.stats import expon
 from scipy.ndimage import gaussian_filter
@@ -129,6 +131,73 @@ def kth_diag_indices(a, k):
         return rows[:-k], cols[k:]
     else:
         return rows, cols
+
+
+def read_normalize_pd(f, distance, res, bias):
+    df = pd.read_csv(f, sep='\t', header=None)
+    df = df.loc[np.abs(df[0]-df[1]) <= ((distance+10) * res), :]
+    df[0] //= res
+    df[1] //= res
+
+    if bias:
+        bdf = pd.read_csv(bias, sep='\t', header=None)
+        biases = np.nan_to_num(bdf[0], nan=np.Inf)
+        biases[biases < 0.2] = np.Inf
+        df[2] = df[2] / (biases[df[0]] * biases[df[1]])
+
+    df = df.loc[df[2] > 0, :]
+
+    x = np.min(df.loc[:, [0, 1]], axis=1)
+    y = np.max(df.loc[:, [0, 1]], axis=1)
+
+    n = max(y) + 1
+    c = np.zeros((n, n), dtype=np.float32)
+    c[x, y] = df[2]
+    normalize_sparse(x, y, df[2], c, res)
+    return c, n
+
+
+def read_hic_file(f, chr, res):
+    """
+    :param f: .hic file path
+    :param chr: Which chromosome to read the file for
+    :param res: Resolution to extract information from
+    :return: Numpy matrix of contact counts
+    """
+    result = straw.straw('KR', f, str(chr), str(chr), 'BP', res)
+    x = np.array(result[0]) // res
+    y = np.array(result[1]) // res
+    val = np.array(result[2])
+    n = max(max(x), max(y)) + 1
+    o = np.zeros((n, n))
+    o[x, y] = val
+    return o, n
+
+
+def read_cooler(f, chr):
+    """
+    :param f: .cool file path
+    :param chr: Which chromosome to read the file for
+    :return: Numpy matrix of contact counts
+    """
+    clr = cooler.Cooler(f)
+    result = clr.matrix(balance=True).fetch(chr)
+    np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+    return result
+
+
+def read_mcooler(f, chr, res):
+    """
+    :param f: .cool file path
+    :param chr: Which chromosome to read the file for
+    :param res: Resolution to extract information from
+    :return: Numpy matrix of contact counts
+    """
+    uri = '%s::/resolutions/%s' % (f, res)
+    clr = cooler.Cooler(uri)
+    result = clr.matrix(balance=True).fetch(chr)
+    np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+    return result
 
 
 def get_diags(map):
@@ -358,24 +427,16 @@ def regulator(f, outdir, bed="",
     distance = distance_filter
 
     distance = int(math.ceil(distance // res))
-    df = pd.read_csv(f, sep='\t', header=None)
-    df = df.loc[np.abs(df[0]-df[1]) <= ((distance+10) * res), :]
-    df[0] //= res
-    df[1] //= res
 
-    bdf = pd.read_csv(bias, sep='\t', header=None)
-    biases = np.nan_to_num(bdf[0], nan=np.Inf)
-    biases[biases < 0.2] = np.Inf
-    df[2] = df[2] / (biases[df[0]] * biases[df[1]])
-    df = df.loc[df[2] > 0, :]
+    if f.endswith(".hic"):
+        c, n = read_hic_file(f, chr, res)
+    elif cooler.fileops.is_cooler(f):
+        c, n = read_cooler(f, chr)
+    elif cooler.fileops.is_multires_file(f):
+        c, n = read_mcooler(f, chr, res)
+    else:
+        c, n = read_normalize_pd(f, distance, res, bias)
 
-    x = np.min(df.loc[:, [0, 1]], axis=1)
-    y = np.max(df.loc[:, [0, 1]], axis=1)
-
-    n = max(y) + 1
-    c = np.zeros((n, n), dtype=np.float32)
-    c[x, y] = df[2]
-    normalize_sparse(x, y, df[2], c, res)
     CHUNK_SIZE = max(2*distance, 2000)
     overlap_size = distance
 
