@@ -183,7 +183,7 @@ def read_cooler(f, chr):
     clr = cooler.Cooler(f)
     result = clr.matrix(balance=True).fetch(chr)
     np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
-    return result
+    return result, result.shape[1]
 
 
 def read_mcooler(f, chr, res):
@@ -197,7 +197,7 @@ def read_mcooler(f, chr, res):
     clr = cooler.Cooler(uri)
     result = clr.matrix(balance=True).fetch(chr)
     np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
-    return result
+    return result, result.shape[1]
 
 
 def get_diags(map):
@@ -429,11 +429,11 @@ def regulator(f, outdir, bed="",
     distance = int(math.ceil(distance // res))
 
     if f.endswith(".hic"):
-        c, n = read_hic_file(f, chr, res)
+        c, n = read_hic_file(f, chromosome, res)
     elif cooler.fileops.is_cooler(f):
-        c, n = read_cooler(f, chr)
+        c, n = read_cooler(f, chromosome)
     elif cooler.fileops.is_multires_file(f):
-        c, n = read_mcooler(f, chr, res)
+        c, n = read_mcooler(f, chromosome, res)
     else:
         c, n = read_normalize_pd(f, distance, res, bias)
 
