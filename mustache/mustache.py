@@ -23,6 +23,9 @@ import scipy.ndimage.measurements as scipy_measurements
 from statsmodels.stats.multitest import multipletests
 
 
+from multiprocessing import Process, Manager
+
+
 def parseBP(s):
     """
     :param s: string
@@ -271,7 +274,7 @@ def normalize_sparse(x, y, v, cmap, resolution):
         cmap[i] = vals
 
 
-def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values, outdir):
+def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values):
 
     c = np.copy(cc[start:end, start:end])
 
@@ -458,22 +461,33 @@ def regulator(f, outdir, bed="",
         start[-1] = end[-1] - CHUNK_SIZE
 
     print("Loop calling...")
-    o = []
-    for i in range(len(start)):
-        print(f"Starting block {i+1}/{len(start)}...")
-        if i == 0:
-            mask_size = -1
-        elif i == len(start)-1:
-            mask_size = end[i-1] - start[i]
-        else:
-            mask_size = overlap_size
-        loops = mustache(
-            c, chromosome, res, start[i], end[i], mask_size, distance, octave_values, outdir)
-        for loop in list(loops):
-            if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
-                o.append([loop[0], loop[1], loop[2], loop[3]])
-        print(f"Block {i+1} done.")
-    return o
+    with Manager() as manager:
+        o = manager.list()
+        processes = []
+        for i in range(len(start)):
+            p = Process(target=process_block, args=(
+                i, start, end, overlap_size, c, chromosome, res, distance, octave_values, o))
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
+        return list(o)
+
+
+def process_block(i, start, end, overlap_size, c, chromosome, res, distance, octave_values, o):
+    print(f"Starting block {i+1}/{len(start)}...")
+    if i == 0:
+        mask_size = -1
+    elif i == len(start)-1:
+        mask_size = end[i-1] - start[i]
+    else:
+        mask_size = overlap_size
+    loops = mustache(
+        c, chromosome, res, start[i], end[i], mask_size, distance, octave_values)
+    for loop in list(loops):
+        if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
+            o.append([loop[0], loop[1], loop[2], loop[3]])
+    print(f"Block {i+1} done.")
 
 
 def main():
