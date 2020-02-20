@@ -11,7 +11,7 @@ paper: <a href="">TBA</a>.
 ```bash
 pip3 install mustache-hic
 mustache -f /path/to/contact/map.txt \
-         -r 100kb -o ./output.tsv
+         -r 5kb -o ./output.tsv
 ```
 
 ### Github
@@ -21,7 +21,7 @@ Make sure you have Python 3 installed, along with all the dependencies listed.
 ```bash
 git clone https://github.com/ay-lab/mustache
 mustache -f /path/to/contact/map.txt \
-         -r 100kb -o ./output.tsv
+         -r 5kb -o ./output.tsv
 ```
 
 ### Dependencies
@@ -55,11 +55,15 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 | **-V**                | **--version**        | Shows the version of the tool.                                                                     |
 
 ### Input Formats
+
 Input map can be one of the following types.
+
 #### .hic Files
+
 Mustache uses <a href="https://github.com/aidenlab/straw">Juicer's</a> straw tool to read .hic files.
 
 #### .cooler, and .mcooler Files
+
 Mustache uses <a href="https://github.com/mirnylab/cooler">Cooler package to read .cool, and .mcool files.</a>
 
 #### Text Contact Maps

@@ -134,7 +134,7 @@ def kth_diag_indices(a, k):
         return rows, cols
 
 
-def read_normalize_pd(f, distance, res, bias):
+def read_pd(f, distance, res, bias):
     df = pd.read_csv(f, sep='\t', header=None)
     df = df.loc[np.abs(df[0]-df[1]) <= ((distance+10) * res), :]
     df[0] //= res
@@ -154,7 +154,6 @@ def read_normalize_pd(f, distance, res, bias):
     n = max(y) + 1
     c = np.zeros((n, n), dtype=np.float32)
     c[x, y] = df[2]
-    normalize_sparse(x, y, df[2], c, res)
     return c, n
 
 
@@ -438,8 +437,10 @@ def regulator(f, outdir, bed="",
     elif cooler.fileops.is_multires_file(f):
         c, n = read_mcooler(f, chromosome, res)
     else:
-        c, n = read_normalize_pd(f, distance, res, bias)
+        c, n = read_pd(f, distance, res, bias)
 
+    x, y = np.nonzero(c)
+    normalize_sparse(x, y, c[x, y], c, res)
     CHUNK_SIZE = max(2*distance, 2000)
     overlap_size = distance
 
