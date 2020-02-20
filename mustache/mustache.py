@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
-import seaborn as sns
 import argparse
 import os
 import sys
+import math
 
 from collections import defaultdict
 
-import numpy as np
-
 import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 import straw
 import cooler
-import matplotlib.pyplot as plt
+
 from scipy.stats import expon
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage.filters import maximum_filter
 from scipy.signal import convolve2d
-from statsmodels.stats.multitest import multipletests
 import scipy.ndimage.measurements as scipy_measurements
-import math
+
+from statsmodels.stats.multitest import multipletests
 
 
 def parseBP(s):
@@ -386,6 +387,8 @@ def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values
 
     means = np.vectorize(diag_mean, excluded=['map'])(k=y-x, map=c)
     passing_indices = c[x, y] > 2*means
+    if len(passing_indices) == 0 or np.sum(passing_indices) == 0:
+        return []
     x = x[passing_indices]
     y = y[passing_indices]
 
