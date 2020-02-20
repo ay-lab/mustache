@@ -100,6 +100,8 @@ def parse_args(args):
                         DEFAULT is 10. Experimentally chosen for \
                         5Kb resolution",
                         required=False)
+    parser.add_argument("-p", "--processes", dest="nprocesses", default=4, type=int,
+                        help="OPTIONAL: Number of parallel processes to run. DEFAULT is 4. Increasing this will also increase the memory usage", required=False)
     parser.add_argument(
         "-ch",
         "--chromosome",
@@ -230,11 +232,10 @@ def get_diags(map):
     return means, stds
 
 
-def normalize_sparse(x, y, v, cmap, resolution):
+def normalize_sparse(x, y, v, cmap, resolution, distance):
     distances = np.abs(y-x)
-    size = cmap.shape[1]
     filter_size = int(2_000_000 / resolution)
-    for d in range(2 + 2_000_000 // resolution):
+    for d in range(2 + distance):
         indices = distances == d
         i = kth_diag_indices(cmap, d)
         vals = np.zeros_like(cmap[i])
@@ -421,6 +422,7 @@ def regulator(f, outdir, bed="",
               s=10,
               octaves=2,
               verbose=True,
+              nprocesses=4,
               distance_filter=2000000,
               bias=False,
               chromosome='n'):
@@ -443,7 +445,7 @@ def regulator(f, outdir, bed="",
 
     print("Normalizing contact map...")
     x, y = np.nonzero(c)
-    normalize_sparse(x, y, c[x, y], c, res)
+    normalize_sparse(x, y, c[x, y], c, res, distance)
     CHUNK_SIZE = max(2*distance, 2000)
     overlap_size = distance
 
@@ -463,14 +465,17 @@ def regulator(f, outdir, bed="",
     print("Loop calling...")
     with Manager() as manager:
         o = manager.list()
+        i = 0
         processes = []
         for i in range(len(start)):
             p = Process(target=process_block, args=(
                 i, start, end, overlap_size, c, chromosome, res, distance, octave_values, o))
             p.start()
             processes.append(p)
-        for p in processes:
-            p.join()
+            if len(processes) >= nprocesses or i == (len(start) - 1):
+                for p in processes:
+                    p.join()
+                processes = []
         return list(o)
 
 
@@ -528,6 +533,7 @@ def main():
                   s=args.s,
                   verbose=args.verbose,
                   distance_filter=distFilter,
+                  nprocesses=args.nprocesses,
                   bias=biasf,
                   chromosome=args.chromosome,
                   octaves=args.octaves)

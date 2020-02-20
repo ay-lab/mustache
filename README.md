@@ -41,19 +41,20 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 
 ## Parameters
 
-| Short                 | Long                 | Meaning                                                                                            |
-| --------------------- | -------------------- | -------------------------------------------------------------------------------------------------- |
-| _Required Parameters_ |                      |                                                                                                    |
-| **-f**                | **--file**           | Location of contact map. (See below for format.)                                                   |
-| **-r**                | **--resolution**     | Resolution of the provided contact map.                                                            |
-| **-o**                | **--outfile**        | Name of the output file.                                                                           |
-| _Optional Parameters_ |                      |                                                                                                    |
-| **-b**                | **--biases**         | Location of biases file for contact map. (See below for format.)                                   |
-| **-sz**               | **--sigmaZero**      | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                |
-| **-oc**               | **--octaves**        | Octaves parameter for Mustache. Default is 2.                                                      |
-| **-d**                | **--distanceFilter** | Distance filter parameter for Mustache. Loops are looked for within this distance. Default is 2Mb. |
-| **-i**                | **--iterations**     | Iteration count parameter for Mustache. Default is experimentally chosen for 5Kb resolution.       |
-| **-V**                | **--version**        | Shows the version of the tool.                                                                     |
+| Short                 | Long                 | Meaning                                                                                                 |
+| --------------------- | -------------------- | ------------------------------------------------------------------------------------------------------- |
+| _Required Parameters_ |                      |                                                                                                         |
+| **-f**                | **--file**           | Location of contact map. (See below for format.)                                                        |
+| **-r**                | **--resolution**     | Resolution of the provided contact map.                                                                 |
+| **-o**                | **--outfile**        | Name of the output file.                                                                                |
+| _Optional Parameters_ |                      |                                                                                                         |
+| **-b**                | **--biases**         | Location of biases file for contact map. (See below for format.)                                        |
+| **-p**                | **--processes**      | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage. |
+| **-sz**               | **--sigmaZero**      | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                     |
+| **-oc**               | **--octaves**        | Octaves parameter for Mustache. Default is 2.                                                           |
+| **-d**                | **--distanceFilter** | Distance filter parameter for Mustache. Loops are looked for within this distance. Default is 2Mb.      |
+| **-i**                | **--iterations**     | Iteration count parameter for Mustache. Default is experimentally chosen for 5Kb resolution.            |
+| **-V**                | **--version**        | Shows the version of the tool.                                                                          |
 
 ### Input Formats
 
