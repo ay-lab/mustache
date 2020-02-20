@@ -55,6 +55,12 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 | **-V**                | **--version**        | Shows the version of the tool.                                                                     |
 
 ### Input Formats
+Input map can be one of the following types.
+#### .hic Files
+Mustache uses <a href="https://github.com/aidenlab/straw">Juicer</a>'s straw tool to read .hic files.
+
+#### .cooler, and .mcooler Files
+Mustache uses <a href="https://github.com/mirnylab/cooler">Cooler package to read .cool, and .mcool files.</a>
 
 #### Text Contact Maps
 
