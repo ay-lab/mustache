@@ -20,8 +20,9 @@ Make sure you have Python 3 installed, along with all the dependencies listed.
 
 ```bash
 git clone https://github.com/ay-lab/mustache
-mustache -f /path/to/contact/map.txt \
-         -r 5kb -o ./output.tsv
+cd mustache
+./mustache/mustache.py -f /path/to/contact/map.txt \
+                       -r 5kb -o ./output.tsv
 ```
 
 ### Dependencies

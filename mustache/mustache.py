@@ -183,7 +183,7 @@ def read_cooler(f, chr):
     clr = cooler.Cooler(f)
     result = clr.matrix(balance=True).fetch(chr)
     np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
-    return result, result.shape[1]
+    return np.triu(result), result.shape[1]
 
 
 def read_mcooler(f, chr, res):
@@ -197,7 +197,7 @@ def read_mcooler(f, chr, res):
     clr = cooler.Cooler(uri)
     result = clr.matrix(balance=True).fetch(chr)
     np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
-    return result, result.shape[1]
+    return np.triu(result), result.shape[1]
 
 
 def get_diags(map):
@@ -233,9 +233,8 @@ def normalize_sparse(x, y, v, cmap, resolution):
     filter_size = int(2_000_000 / resolution)
     for d in range(2 + 2_000_000 // resolution):
         indices = distances == d
-        vals = np.zeros(size - d)
-        vals[x[indices]] = v[indices]
-
+        i = kth_diag_indices(cmap, d)
+        vals = np.zeros_like(cmap[i])
         vals[x[indices]] = v[indices]+0.001
         if vals.size == 0:
             continue
@@ -269,7 +268,6 @@ def normalize_sparse(x, y, v, cmap, resolution):
         vals[x[indices]] /= local_std[x[indices]]
         np.nan_to_num(vals, copy=False, nan=0, posinf=0, neginf=0)
         vals = vals*(1 + math.log(1+mean, 30))
-        i = kth_diag_indices(cmap, d)
         cmap[i] = vals
 
 
@@ -411,7 +409,6 @@ def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values
         _x, _y = indices[i, 0], indices[i, 1]
         out.append([_x+start, _y+start, o[_x, _y], so[_x, _y]])
 
-    print('block done')
     return out
 
 
@@ -430,15 +427,18 @@ def regulator(f, outdir, bed="",
 
     distance = int(math.ceil(distance // res))
 
+    print("Reading contact map...")
+
     if f.endswith(".hic"):
         c, n = read_hic_file(f, chromosome, res)
     elif cooler.fileops.is_cooler(f):
         c, n = read_cooler(f, chromosome)
-    elif cooler.fileops.is_multires_file(f):
+    elif f.endswith(".mcool"):
         c, n = read_mcooler(f, chromosome, res)
     else:
         c, n = read_pd(f, distance, res, bias)
 
+    print("Normalizing contact map...")
     x, y = np.nonzero(c)
     normalize_sparse(x, y, c[x, y], c, res)
     CHUNK_SIZE = max(2*distance, 2000)
@@ -456,8 +456,11 @@ def regulator(f, outdir, bed="",
             end.append(start[-1] + CHUNK_SIZE)
         end[-1] = n
         start[-1] = end[-1] - CHUNK_SIZE
+
+    print("Loop calling...")
     o = []
     for i in range(len(start)):
+        print(f"Starting block {i+1}/{len(start)}...")
         if i == 0:
             mask_size = -1
         elif i == len(start)-1:
@@ -469,6 +472,7 @@ def regulator(f, outdir, bed="",
         for loop in list(loops):
             if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
                 o.append([loop[0], loop[1], loop[2], loop[3]])
+        print(f"Block {i+1} done.")
     return o
 
 
@@ -514,6 +518,8 @@ def main():
                   chromosome=args.chromosome,
                   octaves=args.octaves)
     with open(args.outdir, 'w') as out_file:
+        out_file.write(
+            "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
         for significant in o:
             out_file.write(
                 f'{args.chromosome}\t{significant[0]*res}\t{(significant[0]+1)*res}\t{args.chromosome}\t{significant[1]*res}\t{(significant[1]+1)*res}\t{significant[2]}\t{significant[3]}\n')
