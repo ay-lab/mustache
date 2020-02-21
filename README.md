@@ -4,14 +4,13 @@ Mustache(Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps usi
 Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps.Mustache uses recent technical advances in scale-space theory in Computer Vision to detect blob-shaped objects in a multi-scale representation of the contact map parametrized by the size of the smoothing kernel. For more information read the full
 paper: <a href="">TBA</a>.
 
-## Installation and usage
+## Installation
+See below for usage examples.
 
 ### PIP
 
 ```bash
 pip3 install mustache-hic
-mustache -f /path/to/contact/map.txt \
-         -r 5kb -o ./output.tsv
 ```
 
 ### Github
@@ -21,8 +20,7 @@ Make sure you have Python 3 installed, along with all the dependencies listed.
 ```bash
 git clone https://github.com/ay-lab/mustache
 cd mustache
-./mustache/mustache.py -f /path/to/contact/map.txt \
-                       -r 5kb -o ./output.tsv
+./mustache/mustache.py ...arguments
 ```
 
 ### Dependencies
