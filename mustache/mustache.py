@@ -281,7 +281,6 @@ def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values
     curr_filter = 1
     scales = {}
     for o in octave_values:
-        print("Octave ", o)
         scales[o] = {}
         sigma = o
         w = 2*math.ceil(2*sigma)+1
