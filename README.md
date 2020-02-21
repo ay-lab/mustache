@@ -39,6 +39,28 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 8. cooler
 9. hic-straw
 
+## Examples
+
+#### Example for running Mustache with a .hic file.
+
+- Acquire a hic file. Here we are using <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">MicroC data from HFFc6 cells</a>
+  Run Mustache as follows.
+
+```bash
+mustache -f ./4DNFIPC7P27B.hic -c 7 -r 5kb -o hic_out.tsv -p 20
+```
+
+Where -f is our input file, -c is the subject chromosome, -r is the resolution, -o is the output file, and -p (optional) is the number of parallel processes.
+
+#### Example for running Mustache with a .cool file.
+
+```bash
+wget ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.5kb.cool
+mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -c chr12 -r 5kb -o cooler_out.tsv -d 5Mb
+```
+
+Where -f is our input file, -c is the subject chromosome, -r is the resolution, -o is the output file, and -d (optional) is the maximum distance to search loops in.
+
 ## Parameters
 
 | Short                 | Long                 | Meaning                                                                                                 |
