@@ -109,16 +109,6 @@ def parse_args(args):
         help="REQUIRED: Specify which chromosome to run the program for.",
         default='n',
         required=True)
-    parser.add_argument(
-        "-d",
-        "--distanceFilter",
-        dest="distFilter",
-        type=str,
-        default='2Mb',
-        help="OPTIONAL: If the data is too sparse for distant \
-        locations(ie. distance > 2Mb), you can filter them. \
-        DEFAULT is 2Mb",
-        required=False)
     parser.add_argument("-v",
                         "--verbose",
                         dest="verbose",
@@ -511,7 +501,7 @@ def main():
     if not res:
         print("Error: Invalid resolution")
         return
-    distFilter = 0
+    distFilter = 2_000_000
 
     biasf = False
     if args.biasfile:
@@ -521,11 +511,6 @@ def main():
             print("Error: Couldn't find specified bias file")
             return
 
-    if args.distFilter:
-        distFilter = parseBP(args.distFilter)
-        if not distFilter:
-            print("Error: Invalid distance filter")
-            return
     o = regulator(f, args.outdir,
                   bed=args.bed,
                   res=res,

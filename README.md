@@ -5,6 +5,7 @@ Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Mi
 paper: <a href="">TBA</a>.
 
 ## Installation
+
 See below for usage examples.
 
 ### PIP
@@ -45,36 +46,35 @@ Mustach uses some python packages to accomplish its mission. These are the packa
   Run Mustache as follows.
 
 ```bash
-mustache -f ./4DNFIPC7P27B.hic -c 7 -r 5kb -o hic_out.tsv -p 20
+mustache -f ./4DNFIPC7P27B.hic -c 7 -r 5kb -o hic_out.tsv
 ```
 
-Where -f is our input file, -c is the subject chromosome, -r is the resolution, -o is the output file, and -p (optional) is the number of parallel processes.
+Where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
 
 #### Example for running Mustache with a .cool file.
 
 ```bash
 wget ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.5kb.cool
-mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -c chr12 -r 5kb -o cooler_out.tsv -d 1Mb
+mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -c chr12 -r 5kb -o cooler_out.tsv
 ```
 
-Where -f is our input file, -c is the subject chromosome, -r is the resolution, -o is the output file, and -d (optional) is the maximum distance to search loops in.
+Where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
 
 ## Parameters
 
-| Short                 | Long                 | Meaning                                                                                                 |
-| --------------------- | -------------------- | ------------------------------------------------------------------------------------------------------- |
-| _Required Parameters_ |                      |                                                                                                         |
-| **-f**                | **--file**           | Location of contact map. (See below for format.)                                                        |
-| **-r**                | **--resolution**     | Resolution of the provided contact map.                                                                 |
-| **-o**                | **--outfile**        | Name of the output file.                                                                                |
-| _Optional Parameters_ |                      |                                                                                                         |
-| **-b**                | **--biases**         | Location of biases file for contact map. (See below for format.)                                        |
-| **-p**                | **--processes**      | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage. |
-| **-sz**               | **--sigmaZero**      | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                     |
-| **-oc**               | **--octaves**        | Octaves parameter for Mustache. Default is 2.                                                           |
-| **-d**                | **--distanceFilter** | Distance filter parameter for Mustache. Loops are looked for within this distance. Default is 2Mb.      |
-| **-i**                | **--iterations**     | Iteration count parameter for Mustache. Default is experimentally chosen for 5Kb resolution.            |
-| **-V**                | **--version**        | Shows the version of the tool.                                                                          |
+| Short                 | Long             | Meaning                                                                                                 |
+| --------------------- | ---------------- | ------------------------------------------------------------------------------------------------------- |
+| _Required Parameters_ |                  |                                                                                                         |
+| **-f**                | **--file**       | Location of contact map. (See below for format.)                                                        |
+| **-r**                | **--resolution** | Resolution of the provided contact map.                                                                 |
+| **-o**                | **--outfile**    | Name of the output file.                                                                                |
+| _Optional Parameters_ |                  |                                                                                                         |
+| **-b**                | **--biases**     | Location of biases file for contact map. (See below for format.)                                        |
+| **-p**                | **--processes**  | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage. |
+| **-sz**               | **--sigmaZero**  | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                     |
+| **-oc**               | **--octaves**    | Octaves parameter for Mustache. Default is 2.                                                           |
+| **-i**                | **--iterations** | Iteration count parameter for Mustache. Default is experimentally chosen for 5Kb resolution.            |
+| **-V**                | **--version**    | Shows the version of the tool.                                                                          |
 
 ### Input Formats
 
