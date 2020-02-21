@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
-import seaborn as sns
 import argparse
 import os
 import sys
+import math
 
 from collections import defaultdict
 
-import numpy as np
-
 import pandas as pd
-
+import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
+
+import straw
+import cooler
+
 from scipy.stats import expon
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage.filters import maximum_filter
 from scipy.signal import convolve2d
-from statsmodels.stats.multitest import multipletests
 import scipy.ndimage.measurements as scipy_measurements
-import math
+
+from statsmodels.stats.multitest import multipletests
+
+
+from multiprocessing import Process, Manager
 
 
 def parseBP(s):
@@ -94,6 +100,8 @@ def parse_args(args):
                         DEFAULT is 10. Experimentally chosen for \
                         5Kb resolution",
                         required=False)
+    parser.add_argument("-p", "--processes", dest="nprocesses", default=4, type=int,
+                        help="OPTIONAL: Number of parallel processes to run. DEFAULT is 4. Increasing this will also increase the memory usage", required=False)
     parser.add_argument(
         "-ch",
         "--chromosome",
@@ -131,6 +139,72 @@ def kth_diag_indices(a, k):
         return rows, cols
 
 
+def read_pd(f, distance, res, bias):
+    df = pd.read_csv(f, sep='\t', header=None)
+    df = df.loc[np.abs(df[0]-df[1]) <= ((distance+10) * res), :]
+    df[0] //= res
+    df[1] //= res
+
+    if bias:
+        bdf = pd.read_csv(bias, sep='\t', header=None)
+        biases = np.nan_to_num(bdf[0], nan=np.Inf)
+        biases[biases < 0.2] = np.Inf
+        df[2] = df[2] / (biases[df[0]] * biases[df[1]])
+
+    df = df.loc[df[2] > 0, :]
+
+    x = np.min(df.loc[:, [0, 1]], axis=1)
+    y = np.max(df.loc[:, [0, 1]], axis=1)
+
+    n = max(y) + 1
+    c = np.zeros((n, n), dtype=np.float32)
+    c[x, y] = df[2]
+    return c, n
+
+
+def read_hic_file(f, chr, res):
+    """
+    :param f: .hic file path
+    :param chr: Which chromosome to read the file for
+    :param res: Resolution to extract information from
+    :return: Numpy matrix of contact counts
+    """
+    result = straw.straw('KR', f, str(chr), str(chr), 'BP', res)
+    x = np.array(result[0]) // res
+    y = np.array(result[1]) // res
+    val = np.array(result[2])
+    n = max(max(x), max(y)) + 1
+    o = np.zeros((n, n))
+    o[x, y] = val
+    return o, n
+
+
+def read_cooler(f, chr):
+    """
+    :param f: .cool file path
+    :param chr: Which chromosome to read the file for
+    :return: Numpy matrix of contact counts
+    """
+    clr = cooler.Cooler(f)
+    result = clr.matrix(balance=True).fetch(chr)
+    np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+    return np.triu(result), result.shape[1]
+
+
+def read_mcooler(f, chr, res):
+    """
+    :param f: .cool file path
+    :param chr: Which chromosome to read the file for
+    :param res: Resolution to extract information from
+    :return: Numpy matrix of contact counts
+    """
+    uri = '%s::/resolutions/%s' % (f, res)
+    clr = cooler.Cooler(uri)
+    result = clr.matrix(balance=True).fetch(chr)
+    np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+    return np.triu(result), result.shape[1]
+
+
 def get_diags(map):
     """
     :param map: Contact map, numpy matrix
@@ -158,15 +232,13 @@ def get_diags(map):
     return means, stds
 
 
-def normalize_sparse(x, y, v, cmap, resolution):
+def normalize_sparse(x, y, v, cmap, resolution, distance):
     distances = np.abs(y-x)
-    size = cmap.shape[1]
     filter_size = int(2_000_000 / resolution)
-    for d in range(2 + 2_000_000 // resolution):
+    for d in range(2 + distance):
         indices = distances == d
-        vals = np.zeros(size - d)
-        vals[x[indices]] = v[indices]
-
+        i = kth_diag_indices(cmap, d)
+        vals = np.zeros_like(cmap[i])
         vals[x[indices]] = v[indices]+0.001
         if vals.size == 0:
             continue
@@ -200,11 +272,10 @@ def normalize_sparse(x, y, v, cmap, resolution):
         vals[x[indices]] /= local_std[x[indices]]
         np.nan_to_num(vals, copy=False, nan=0, posinf=0, neginf=0)
         vals = vals*(1 + math.log(1+mean, 30))
-        i = kth_diag_indices(cmap, d)
         cmap[i] = vals
 
 
-def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values, outdir):
+def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values):
 
     c = np.copy(cc[start:end, start:end])
 
@@ -317,6 +388,8 @@ def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values
 
     means = np.vectorize(diag_mean, excluded=['map'])(k=y-x, map=c)
     passing_indices = c[x, y] > 2*means
+    if len(passing_indices) == 0 or np.sum(passing_indices) == 0:
+        return []
     x = x[passing_indices]
     y = y[passing_indices]
 
@@ -340,7 +413,6 @@ def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values
         _x, _y = indices[i, 0], indices[i, 1]
         out.append([_x+start, _y+start, o[_x, _y], so[_x, _y]])
 
-    print('block done')
     return out
 
 
@@ -350,6 +422,7 @@ def regulator(f, outdir, bed="",
               s=10,
               octaves=2,
               verbose=True,
+              nprocesses=4,
               distance_filter=2000000,
               bias=False,
               chromosome='n'):
@@ -358,24 +431,21 @@ def regulator(f, outdir, bed="",
     distance = distance_filter
 
     distance = int(math.ceil(distance // res))
-    df = pd.read_csv(f, sep='\t', header=None)
-    df = df.loc[np.abs(df[0]-df[1]) <= ((distance+10) * res), :]
-    df[0] //= res
-    df[1] //= res
 
-    bdf = pd.read_csv(bias, sep='\t', header=None)
-    biases = np.nan_to_num(bdf[0], nan=np.Inf)
-    biases[biases < 0.2] = np.Inf
-    df[2] = df[2] / (biases[df[0]] * biases[df[1]])
-    df = df.loc[df[2] > 0, :]
+    print("Reading contact map...")
 
-    x = np.min(df.loc[:, [0, 1]], axis=1)
-    y = np.max(df.loc[:, [0, 1]], axis=1)
+    if f.endswith(".hic"):
+        c, n = read_hic_file(f, chromosome, res)
+    elif cooler.fileops.is_cooler(f):
+        c, n = read_cooler(f, chromosome)
+    elif f.endswith(".mcool"):
+        c, n = read_mcooler(f, chromosome, res)
+    else:
+        c, n = read_pd(f, distance, res, bias)
 
-    n = max(y) + 1
-    c = np.zeros((n, n), dtype=np.float32)
-    c[x, y] = df[2]
-    normalize_sparse(x, y, df[2], c, res)
+    print("Normalizing contact map...")
+    x, y = np.nonzero(c)
+    normalize_sparse(x, y, c[x, y], c, res, distance)
     CHUNK_SIZE = max(2*distance, 2000)
     overlap_size = distance
 
@@ -391,20 +461,38 @@ def regulator(f, outdir, bed="",
             end.append(start[-1] + CHUNK_SIZE)
         end[-1] = n
         start[-1] = end[-1] - CHUNK_SIZE
-    o = []
-    for i in range(len(start)):
-        if i == 0:
-            mask_size = -1
-        elif i == len(start)-1:
-            mask_size = end[i-1] - start[i]
-        else:
-            mask_size = overlap_size
-        loops = mustache(
-            c, chromosome, res, start[i], end[i], mask_size, distance, octave_values, outdir)
-        for loop in list(loops):
-            if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
-                o.append([loop[0], loop[1], loop[2], loop[3]])
-    return o
+
+    print("Loop calling...")
+    with Manager() as manager:
+        o = manager.list()
+        i = 0
+        processes = []
+        for i in range(len(start)):
+            p = Process(target=process_block, args=(
+                i, start, end, overlap_size, c, chromosome, res, distance, octave_values, o))
+            p.start()
+            processes.append(p)
+            if len(processes) >= nprocesses or i == (len(start) - 1):
+                for p in processes:
+                    p.join()
+                processes = []
+        return list(o)
+
+
+def process_block(i, start, end, overlap_size, c, chromosome, res, distance, octave_values, o):
+    print(f"Starting block {i+1}/{len(start)}...")
+    if i == 0:
+        mask_size = -1
+    elif i == len(start)-1:
+        mask_size = end[i-1] - start[i]
+    else:
+        mask_size = overlap_size
+    loops = mustache(
+        c, chromosome, res, start[i], end[i], mask_size, distance, octave_values)
+    for loop in list(loops):
+        if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
+            o.append([loop[0], loop[1], loop[2], loop[3]])
+    print(f"Block {i+1} done.")
 
 
 def main():
@@ -445,10 +533,13 @@ def main():
                   s=args.s,
                   verbose=args.verbose,
                   distance_filter=distFilter,
+                  nprocesses=args.nprocesses,
                   bias=biasf,
                   chromosome=args.chromosome,
                   octaves=args.octaves)
     with open(args.outdir, 'w') as out_file:
+        out_file.write(
+            "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
         for significant in o:
             out_file.write(
                 f'{args.chromosome}\t{significant[0]*res}\t{(significant[0]+1)*res}\t{args.chromosome}\t{significant[1]*res}\t{(significant[1]+1)*res}\t{significant[2]}\t{significant[3]}\n')
