@@ -54,7 +54,7 @@ Where -f is our input file, -c is the subject chromosome, -r is the resolution, 
 
 ```bash
 wget ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.5kb.cool
-mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -c chr12 -r 5kb -o cooler_out.tsv -d 5Mb
+mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -c chr12 -r 5kb -o cooler_out.tsv -d 1Mb
 ```
 
 Where -f is our input file, -c is the subject chromosome, -r is the resolution, -o is the output file, and -d (optional) is the maximum distance to search loops in.
