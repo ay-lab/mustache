@@ -93,11 +93,11 @@ Mustache uses <a href="https://github.com/mirnylab/cooler">Cooler package to rea
 Contact maps need to have the following format. They must not have a header.
 Values must be separated by a tab.
 
-| Midpoint 1 | Midpoint 2 | Contact Count |
-| ---------- | ---------- | ------------- |
-| 5000       | 65000      | 438           |
-| 5000       | 85000      | 12            |
-| ...        | ...        | ...           |
+| Chromosome 1 | Midpoint 1 | Chromosome 2 | Midpoint 2 | Contact Count |
+| ------------ | ---------- | ------------ | ---------- | ------------- |
+| chr1         | 5000       | chr1         | 65000      | 438           |
+| chr1         | 5000       | chr1         | 85000      | 12            |
+| ...          | ...        | ...          | ...        | ...           |
 
 #### Bias File
 

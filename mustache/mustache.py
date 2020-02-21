@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+import re
 import math
 
 from collections import defaultdict
@@ -129,26 +130,37 @@ def kth_diag_indices(a, k):
         return rows, cols
 
 
-def read_pd(f, distance, res, bias):
+def is_chr(s, c):
+    if 'X' == c:
+        return 'X' in c
+    if 'Y' == c:
+        return 'Y' in c
+    return str(c) in re.findall("[1-9][0-9]*", s)
+
+
+def read_pd(f, distance, res, bias, chromosome):
     df = pd.read_csv(f, sep='\t', header=None)
-    df = df.loc[np.abs(df[0]-df[1]) <= ((distance+10) * res), :]
-    df[0] //= res
+    df.dropna(inplace=True)
+    df = df[np.vectorize(is_chr)(df[0], chromosome)]
+    df = df[np.vectorize(is_chr)(df[2], chromosome)]
+    df = df.loc[np.abs(df[1]-df[3]) <= ((distance+10) * res), :]
     df[1] //= res
+    df[3] //= res
 
     if bias:
         bdf = pd.read_csv(bias, sep='\t', header=None)
         biases = np.nan_to_num(bdf[0], nan=np.Inf)
         biases[biases < 0.2] = np.Inf
-        df[2] = df[2] / (biases[df[0]] * biases[df[1]])
+        df[4] = df[4] / (biases[df[1]] * biases[df[3]])
 
-    df = df.loc[df[2] > 0, :]
+    df = df.loc[df[4] > 0, :]
 
-    x = np.min(df.loc[:, [0, 1]], axis=1)
-    y = np.max(df.loc[:, [0, 1]], axis=1)
+    x = np.min(df.loc[:, [1, 3]], axis=1)
+    y = np.max(df.loc[:, [1, 3]], axis=1)
 
     n = max(y) + 1
     c = np.zeros((n, n), dtype=np.float32)
-    c[x, y] = df[2]
+    c[x, y] = df[4]
     return c, n
 
 
@@ -430,7 +442,7 @@ def regulator(f, outdir, bed="",
     elif f.endswith(".mcool"):
         c, n = read_mcooler(f, chromosome, res)
     else:
-        c, n = read_pd(f, distance, res, bias)
+        c, n = read_pd(f, distance, res, bias, chromosome)
 
     print("Normalizing contact map...")
     x, y = np.nonzero(c)
