@@ -178,7 +178,8 @@ def read_hic_file(f, chr, res):
     n = max(max(x), max(y)) + 1
     o = np.zeros((n, n))
     o[x, y] = val
-    return o, n
+    o[y, x] = val
+    return np.triu(o), n
 
 
 def read_cooler(f, chr):
