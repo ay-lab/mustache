@@ -179,6 +179,8 @@ def read_hic_file(f, chr, res):
     o = np.zeros((n, n))
     o[x, y] = val
     o[y, x] = val
+    o = np.triu(o)
+    np.nan_to_num(o, copy=False, nan=0, posinf=0, neginf=0)
     return np.triu(o), n
 
 
