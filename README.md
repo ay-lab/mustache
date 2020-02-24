@@ -42,7 +42,7 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 
 #### Example for running Mustache with a contact map and a normalization vector (bias)
 
-- Running Mustache on chromosome 21 of HMEC cell line (from Rao et al.) with KR normalization in 5kb resolution as follows.
+- Run Mustache on provided example data for chromosome 21 of HMEC cell line (from Rao et al.) with KR normalization in 5kb resolution as follows.
 
 ```bash
 mustache -f ./chr21_5kb.RAWobserved -b ./chr21_5kb.KRnorm -c 21 -r 5kb -pt 0.1 -o chr21_out.tsv
