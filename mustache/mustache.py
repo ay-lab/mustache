@@ -82,6 +82,14 @@ def parse_args(args):
                         ICE or KR norm for each locus for contact map are read from BIASFILE",
                         required=False)
     parser.add_argument(
+        "-pt",
+        "--pThreshold",
+        dest="pt",
+        type=float,
+        default=0.2,
+        help="OPTIONAL: P-value threshold for the results in the final output. Default is 0.2",
+        required=False)
+    parser.add_argument(
         "-sz",
         "--sigmaZero",
         dest="s_z",
@@ -447,7 +455,7 @@ def regulator(f, outdir, bed="",
 
     if f.endswith(".hic"):
         c, n = read_hic_file(f, chromosome, res)
-    elif cooler.fileops.is_cooler(f):
+    elif f.endswith(".cool"):
         c, n = read_cooler(f, chromosome)
     elif f.endswith(".mcool"):
         c, n = read_mcooler(f, chromosome, res)
@@ -547,8 +555,9 @@ def main():
         out_file.write(
             "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
         for significant in o:
-            out_file.write(
-                f'{args.chromosome}\t{significant[0]*res}\t{(significant[0]+1)*res}\t{args.chromosome}\t{significant[1]*res}\t{(significant[1]+1)*res}\t{significant[2]}\t{significant[3]}\n')
+            if float(significant[2]) < args.pt:
+                out_file.write(
+                    f'{args.chromosome}\t{significant[0]*res}\t{(significant[0]+1)*res}\t{args.chromosome}\t{significant[1]*res}\t{(significant[1]+1)*res}\t{significant[2]}\t{significant[3]}\n')
 
 
 if __name__ == '__main__':
