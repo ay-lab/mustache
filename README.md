@@ -48,7 +48,7 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 mustache -f ./5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.RAWobserved -b ./5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.KRnorm -c 1 -r 5kb -o chr1_out.tsv
 ```
 
-Where -f is the raw contact map, -b is the normalization vector -c is the subject chromosome, -r is the resolution, and -o is the output file.
+Where -f is the raw contact map, -b is the normalization vector, -c is the subject chromosome, -r is the resolution, and -o is the output file.
 
 #### Example for running Mustache with a .hic file.
 
