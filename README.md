@@ -40,9 +40,19 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 
 ## Examples
 
+#### Example for running Mustache with a pair of contact map and normalization factor as input.
+
+- Download the compressed file for intrachromosomal interactions of GM12878 cell line from the <a href="ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE63nnn/GSE63525/suppl/GSE63525_GM12878_combined_intrachromosomal_contact_matrices.tar.gz">GEO entry for Rao et. al</a>. Extract the contact maps from the file. Run Mustache for chromosome one with KR normalization as follows.
+
+```bash
+mustache -f ./5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.RAWobserved -b ./5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.KRnorm -c 1 -r 5kb -o chr1_out.tsv
+```
+
+Where -f is the raw contact map, -b is the normalization vector -c is the subject chromosome, -r is the resolution, and -o is the output file.
+
 #### Example for running Mustache with a .hic file.
 
-- Acquire a hic file. Here we are using <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">MicroC data from HFFc6 cells</a>
+- Acquire a hic file. Here we are using <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">Micro-C data from HFFc6 cells</a>
   Run Mustache as follows.
 
 ```bash
