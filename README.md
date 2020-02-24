@@ -40,7 +40,7 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 
 ## Examples
 
-#### Example for running Mustache with a pair of contact map and normalization vector as input.
+#### Example for running Mustache with a contact map and a normalization vector (bias) as input
 
 - Running Mustache on chromosome 21 of HMEC cell line (from Rao et al.) with KR normalization in 5kb resolution as follows.
 
@@ -50,7 +50,7 @@ mustache -f ./chr21_5kb.RAWobserved -b ./chr21_5kb.KRnorm -c 21 -r 5kb -pt 0.1 -
 
 Where -f is the raw contact map, -b is the bias (normalization vector) file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
 
-#### Example for running Mustache with a .hic file.
+#### Example for running Mustache with a .hic file
 
 - Acquire a hic file. Here we are using <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">Micro-C data from HFFc6 cells</a>. Run Mustache as follows.
 
@@ -60,7 +60,7 @@ mustache -f ./4DNFIPC7P27B.hic -c 7 -r 5kb -pt 0.001 -o hic_out.tsv
 
 Where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
 
-#### Example for running Mustache with a .cool file.
+#### Example for running Mustache with a .cool file
 
 ```bash
 wget ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.5kb.cool
