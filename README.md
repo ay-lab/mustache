@@ -42,7 +42,7 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 
 #### Example for running Mustache with a pair of contact map and normalization vector as input.
 
-- Download the compressed file for intrachromosomal interactions of GM12878 cell line from the <a href="ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE63nnn/GSE63525/suppl/GSE63525_GM12878_combined_intrachromosomal_contact_matrices.tar.gz">GEO entry for Rao et al.</a> 
+- Download the compressed file for intrachromosomal interactions of GM12878 cell line from the <a href='ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE63nnn/GSE63525/suppl/GSE63525_GM12878_combined_intrachromosomal_contact_matrices.tar.gz'>GEO entry for Rao et al.</a> 
 and extract the contact maps from the file. Run Mustache for chromosome one with KR normalization in 5kb resolution as follows.
 
 ```bash
