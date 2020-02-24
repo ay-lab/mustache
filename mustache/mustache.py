@@ -175,12 +175,17 @@ def read_hic_file(f, chr, res):
     x = np.array(result[0]) // res
     y = np.array(result[1]) // res
     val = np.array(result[2])
+    dist_f = np.abs(x-y) <= (2_000_000 / res)
+    x = x[dist_f]
+    y = y[dist_f]
+    val = val[dist_f]
     n = max(max(x), max(y)) + 1
     o = np.zeros((n, n))
     o[x, y] = val
     o[y, x] = val
     o = np.triu(o)
     np.nan_to_num(o, copy=False, nan=0, posinf=0, neginf=0)
+    o[np.triu_indices_from(o, k=(2000000+1))] = 0
     return np.triu(o), n
 
 
@@ -193,6 +198,7 @@ def read_cooler(f, chr):
     clr = cooler.Cooler(f)
     result = clr.matrix(balance=True).fetch(chr)
     np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+    result[np.triu_indices_from(result, k=(2000000+1))] = 0
     return np.triu(result), result.shape[1]
 
 
@@ -207,6 +213,7 @@ def read_mcooler(f, chr, res):
     clr = cooler.Cooler(uri)
     result = clr.matrix(balance=True).fetch(chr)
     np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+    result[np.triu_indices_from(result, k=(2000000+1))] = 0
     return np.triu(result), result.shape[1]
 
 
