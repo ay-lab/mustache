@@ -42,11 +42,10 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 
 #### Example for running Mustache with a pair of contact map and normalization vector as input.
 
-- Download the compressed file for intrachromosomal interactions of GM12878 cell line from the <a href='ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE63nnn/GSE63525/suppl/GSE63525_GM12878_combined_intrachromosomal_contact_matrices.tar.gz'>GEO entry for Rao et al.</a> 
-and extract the contact maps from the file. Run Mustache for chromosome one with KR normalization in 5kb resolution as follows.
+- Running Mustache on chromosome 21 of HMEC cell line (from Rao et al.) with KR normalization in 5kb resolution as follows.
 
 ```bash
-mustache -f ./5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.RAWobserved -b ./5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.KRnorm -c 1 -r 5kb -o chr1_out.tsv
+mustache -f ./chr21_5kb.RAWobserved -b ./chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out.tsv
 ```
 
 Where -f is the raw contact map, -b is the normalization vector, -c is the subject chromosome, -r is the resolution, and -o is the output file.
@@ -80,7 +79,7 @@ Where -f is our input file, -c is the subject chromosome, -r is the resolution, 
 | **-r**                | **--resolution** | Resolution of the provided contact map.                                                                 |
 | **-o**                | **--outfile**    | Name of the output file.                                                                                |
 | _Optional Parameters_ |                  |                                                                                                         |
-| **-b**                | **--biases**     | Location of biases file for contact map. (See below for format.)                                        |
+| **-b**                | **--biases**     | Location of biases (normalization) file for contact map. (See below for format.)                                   |
 | **-p**                | **--processes**  | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage. |
 | **-sz**               | **--sigmaZero**  | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                     |
 | **-oc**               | **--octaves**    | Octaves parameter for Mustache. Default is 2.                                                           |
