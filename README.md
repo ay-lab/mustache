@@ -45,7 +45,7 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 - Running Mustache on chromosome 21 of HMEC cell line (from Rao et al.) with KR normalization in 5kb resolution as follows.
 
 ```bash
-mustache -f ./chr21_5kb.RAWobserved -b ./chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out.tsv
+mustache -f ./chr21_5kb.RAWobserved -b ./chr21_5kb.KRnorm -c 21 -r 5kb -pt 0.1 -o chr21_out.tsv
 ```
 
 Where -f is the raw contact map, -b is the bias (normalization vector) file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
@@ -56,7 +56,7 @@ Where -f is the raw contact map, -b is the bias (normalization vector) file, -c 
   Run Mustache as follows.
 
 ```bash
-mustache -f ./4DNFIPC7P27B.hic -c 7 -r 5kb -o hic_out.tsv
+mustache -f ./4DNFIPC7P27B.hic -c 7 -r 5kb -pt 0.001 -o hic_out.tsv
 ```
 
 Where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
@@ -65,7 +65,7 @@ Where -f is our input file, -c is the subject chromosome, -r is the resolution, 
 
 ```bash
 wget ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.5kb.cool
-mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -c chr12 -r 5kb -o cooler_out.tsv
+mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -c chr12 -r 5kb -pt 0.05 -o cooler_out.tsv
 ```
 
 Where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
