@@ -79,7 +79,7 @@ Where -f is our input file, -c is the subject chromosome, -r is the resolution, 
 | **-r**                | **--resolution** | Resolution of the provided contact map.                                                                 |
 | **-o**                | **--outfile**    | Name of the output file.                                                                                |
 | _Optional Parameters_ |                  |                                                                                                         |
-| **-b**                | **--biases**     | Location of biases (normalization) file for contact map. (See below for format.)                                   |
+| **-b**                | **--biases**     | Location of biases (normalization) file for contact map (See below for format).                                   |
 | **-p**                | **--processes**  | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage. |
 | **-sz**               | **--sigmaZero**  | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                     |
 | **-oc**               | **--octaves**    | Octaves parameter for Mustache. Default is 2.                                                           |
