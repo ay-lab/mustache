@@ -40,7 +40,7 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 
 ## Examples
 
-#### Example for running Mustache with a contact map and a normalization vector (bias) as input
+#### Example for running Mustache with a contact map and a normalization vector (bias)
 
 - Running Mustache on chromosome 21 of HMEC cell line (from Rao et al.) with KR normalization in 5kb resolution as follows.
 
@@ -48,17 +48,17 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 mustache -f ./chr21_5kb.RAWobserved -b ./chr21_5kb.KRnorm -c 21 -r 5kb -pt 0.1 -o chr21_out.tsv
 ```
 
-Where -f is the raw contact map, -b is the bias (normalization vector) file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
+where -f is the raw contact map, -b is the bias (normalization vector) file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
 
 #### Example for running Mustache with a .hic file
 
-- Acquire a hic file. Here we are using <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">Micro-C data from HFFc6 cells</a>. Run Mustache as follows.
+- Acquire the .hic format file for HFFc6 Micro-C from <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">4D Nucleome Data Portal</a>. Run Mustache as follows.
 
 ```bash
 mustache -f ./4DNFIPC7P27B.hic -c 7 -r 5kb -pt 0.001 -o hic_out.tsv
 ```
 
-Where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
+where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
 
 #### Example for running Mustache with a .cool file
 
@@ -67,7 +67,7 @@ wget ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filter
 mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -c chr12 -r 5kb -pt 0.05 -o cooler_out.tsv
 ```
 
-Where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
+where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
 
 ## Parameters
 
