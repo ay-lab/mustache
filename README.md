@@ -52,8 +52,7 @@ Where -f is the raw contact map, -b is the bias (normalization vector) file, -c 
 
 #### Example for running Mustache with a .hic file.
 
-- Acquire a hic file. Here we are using <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">Micro-C data from HFFc6 cells</a>
-  Run Mustache as follows.
+- Acquire a hic file. Here we are using <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">Micro-C data from HFFc6 cells</a>. Run Mustache as follows.
 
 ```bash
 mustache -f ./4DNFIPC7P27B.hic -c 7 -r 5kb -pt 0.001 -o hic_out.tsv
