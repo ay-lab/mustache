@@ -4,6 +4,7 @@ import os
 import sys
 import re
 import math
+import warnings
 
 from collections import defaultdict
 
@@ -253,46 +254,48 @@ def get_diags(map):
 
 
 def normalize_sparse(x, y, v, cmap, resolution, distance):
-    distances = np.abs(y-x)
-    filter_size = int(2_000_000 / resolution)
-    for d in range(2 + distance):
-        indices = distances == d
-        i = kth_diag_indices(cmap, d)
-        vals = np.zeros_like(cmap[i])
-        vals[x[indices]] = v[indices]+0.001
-        if vals.size == 0:
-            continue
-        std = np.std(v[indices])
-        mean = np.mean(v[indices])
-        if math.isnan(mean):
-            mean = 0
-        if math.isnan(std):
-            std = 1
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=RuntimeWarning)
+        distances = np.abs(y-x)
+        filter_size = int(2_000_000 / resolution)
+        for d in range(2 + distance):
+            indices = distances == d
+            i = kth_diag_indices(cmap, d)
+            vals = np.zeros_like(cmap[i])
+            vals[x[indices]] = v[indices]+0.001
+            if vals.size == 0:
+                continue
+            std = np.std(v[indices])
+            mean = np.mean(v[indices])
+            if math.isnan(mean):
+                mean = 0
+            if math.isnan(std):
+                std = 1
 
-        kernel = np.ones(filter_size)
-        counts = np.convolve(vals != 0, kernel, mode='same')
+            kernel = np.ones(filter_size)
+            counts = np.convolve(vals != 0, kernel, mode='same')
 
-        s = np.convolve(vals, kernel, mode='same')
-        s2 = np.convolve(vals ** 2, kernel, mode='same')
-        local_var = (s2 - s ** 2 / counts) / (counts - 1)
+            s = np.convolve(vals, kernel, mode='same')
+            s2 = np.convolve(vals ** 2, kernel, mode='same')
+            local_var = (s2 - s ** 2 / counts) / (counts - 1)
 
-        std2 = std ** 2
-        np.nan_to_num(local_var, copy=False,
-                      neginf=std2, posinf=std2, nan=std2)
+            std2 = std ** 2
+            np.nan_to_num(local_var, copy=False,
+                          neginf=std2, posinf=std2, nan=std2)
 
-        local_mean = s / counts
-        local_mean[counts < 30] = mean
-        local_var[counts < 30] = std2
+            local_mean = s / counts
+            local_mean[counts < 30] = mean
+            local_var[counts < 30] = std2
 
-        np.nan_to_num(local_mean, copy=False,
-                      neginf=mean, posinf=mean, nan=mean)
+            np.nan_to_num(local_mean, copy=False,
+                          neginf=mean, posinf=mean, nan=mean)
 
-        local_std = np.sqrt(local_var)
-        vals[x[indices]] -= local_mean[x[indices]]
-        vals[x[indices]] /= local_std[x[indices]]
-        np.nan_to_num(vals, copy=False, nan=0, posinf=0, neginf=0)
-        vals = vals*(1 + math.log(1+mean, 30))
-        cmap[i] = vals
+            local_std = np.sqrt(local_var)
+            vals[x[indices]] -= local_mean[x[indices]]
+            vals[x[indices]] /= local_std[x[indices]]
+            np.nan_to_num(vals, copy=False, nan=0, posinf=0, neginf=0)
+            vals = vals*(1 + math.log(1+mean, 30))
+            cmap[i] = vals
 
 
 def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values):
