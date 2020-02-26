@@ -25,7 +25,14 @@ conda env create -f ./mustache/environment.yml
 conda activate mustache
 python -m mustache  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1
 ```
-
+or
+``` 
+python3 ./mustache/mustache/mustache.py  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1
+```
+or
+```
+./mustache/mustache/mustache.py  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1
+```
 ### Docker
 
 We have a Docker container that allows running Mustache out of the box. You can <a href="https://docs.docker.com/storage/bind-mounts/">mount</a> the necessary input and output locations and run Mustache as follows.
