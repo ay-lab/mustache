@@ -21,6 +21,8 @@ dependencies:
   - wheel=0.34.2=py38_0
   - xz=5.2.4=h14c3975_4
   - zlib=1.2.11=h7b6447c_3
+  - anaconda
+  - gcc
   - pip:
     - asciitree==0.3.3
     - biopython==1.76
