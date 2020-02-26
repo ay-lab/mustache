@@ -44,7 +44,7 @@ cd mustache
 
 ### Dependencies
 
-Mustach uses these python packages:
+Mustache uses these python packages:
 Check [here](environment.yml) for a list of dependancy versions that we know are working with Mustache.
 
 1. python >= 3.6
