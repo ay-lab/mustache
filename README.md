@@ -16,7 +16,7 @@ Conda is the recommended way of running mustache as it will take care of the dep
 git clone https://github.com/ay-lab/mustache
 conda env create -f ./mustache/environment.yml
 conda activate mustache
-python -m mustache  -f ./data/chr21_5kb.RAWobserved -c 21 -r 5kb -o chr21_out5.tsv -pt 0.05
+python -m mustache  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.05
 ```
 
 ### PIP
