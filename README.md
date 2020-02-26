@@ -19,6 +19,14 @@ conda activate mustache
 python -m mustache  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.05
 ```
 
+### Docker
+
+We have a Docker container that allows running Mustache out of the box. You can <a href="https://docs.docker.com/storage/bind-mounts/">mount</a> the necessary input and output locations and run Mustache as follows.
+```bash
+docker run -it aylab/mustache
+mustache -f /mustache/data/chr21_5kb.RAWobserved -b /mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o ./chr21_out5.tsv -pt 0.05
+```
+
 ### PIP
 
 ```bash
