@@ -147,3 +147,6 @@ Mustache uses <a href="https://github.com/mirnylab/cooler">Cooler package to rea
 Output of Mustache is a TSV file and is formatted as follows
 
 `| Bin 1 Chromosome | Bin 1 Start | Bin 1 End | Bin 2 Chromosome | Bin 2 Start | Bin 2 End | FDR | Mustache Scale for this Detection |`
+
+### Citation
+If you use Mustache in your work, please cite the <a href="https://www.biorxiv.org/content/10.1101/2020.02.24.963579v1">Mustache paper</a> (currently on bioRxiv). 
