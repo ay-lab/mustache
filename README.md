@@ -90,18 +90,13 @@ where -f is our input file, -c is the subject chromosome, -r is the resolution, 
 
 Input map can be one of the following types.
 
-#### .hic Files
+#### 1. Text format (contact counts file + bias file)
 
-Mustache uses <a href="https://github.com/aidenlab/straw">Juicer's</a> straw tool to read .hic files.
+Similar to Hi-C analysis tools previously developed by our lab (<a href="https://github.com/ay-lab/selfish">Selfish</a> and <a href="https://github.com/ay-lab/fithic">FitHiC</a>), we allow a simple, readable textual input format for Mustache.
 
-#### .cooler, and .mcooler Files
+To use this input mode, we require a contact map and a bias/normalization vector file. 
 
-Mustache uses <a href="https://github.com/mirnylab/cooler">Cooler package to read .cool, and .mcool files.</a>
-
-#### Text Contact Maps
-
-Contact maps need to have the following format. They must not have a header.
-The values must be separated by a tab.
+1a. Contact map files need to have the following format. They must not have a header. The values must be separated by a tab.
 
 | Chromosome 1 | Midpoint 1 | Chromosome 2 | Midpoint 2 | Contact Count |
 | ------------ | ---------- | ------------ | ---------- | ------------- |
@@ -109,11 +104,9 @@ The values must be separated by a tab.
 | chr1         | 5000       | chr1         | 85000      | 12            |
 | ...          | ...        | ...          | ...        | ...           |
 
-#### Bias File
+1b. Bias files need to have the following format. They must not have a header. Bias file must use the same midpoint format as the contact maps.
 
-Bias file need to have the following format.
-Bias file must use the same midpoint format as the contact maps.
-Bias file must not have a header. Bias file is a list of normalization factors. This means contacts will be _divided_ by their corresponding factors.
+Bias file is a list of normalization factors. This means contact counts will be _divided_ by their corresponding factors.
 
 | Factor |
 | ------ |
@@ -122,6 +115,14 @@ Bias file must not have a header. Bias file is a list of normalization factors. 
 | 0.1    |
 
 Where the line number is equal to the bin number. So if your resolution is 5Kb, first line is the factor for 0-5Kb bin.
+
+#### 2. Juicer .hic Files
+
+Mustache uses <a href="https://github.com/aidenlab/straw">Juicer's</a> straw tool to read .hic files.
+
+#### 3. Cooler .cool, and .mcool Files
+
+Mustache uses <a href="https://github.com/mirnylab/cooler">Cooler package to read .cool, and .mcool files.</a>
 
 ### Output
 
