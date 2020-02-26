@@ -10,9 +10,6 @@ from collections import defaultdict
 
 import pandas as pd
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-
 import straw
 import cooler
 
@@ -147,20 +144,59 @@ def is_chr(s, c):
     return str(c) in re.findall("[1-9][0-9]*", s)
 
 
+def get_sep(f):
+    """
+    :param f: file path
+    :return: Guesses the value separator in the file.
+    """
+    with open(f) as file:
+        for line in file:
+            if "\t" in line:
+                return '\t'
+            if " " in line.strip():
+                return ' '
+            if "," in line:
+                return ','
+            break
+    raise FileNotFoundError
+
+
+def read_bias(f, chromosome, res):
+    """
+    :param f: Path to the bias file
+    :return: Dictionary where keys are the bin coordinates and values are the bias value to multiply them with.
+    """
+    d = defaultdict(lambda: 1.0)
+    if f:
+        sep = get_sep(f)
+        with open(f) as file:
+            for line in file:
+                line = line.strip().split(sep)
+                if is_chr(line[0], chromosome):
+                    val = float(line[2])
+                    if not np.isnan(val):
+                        d[(float(line[1]) // res)] = val
+                    else:
+                        d[(float(line[1]) // res)] = np.Inf
+        return d
+    return False
+
+
 def read_pd(f, distance, res, bias, chromosome):
-    df = pd.read_csv(f, sep='\t', header=None)
+    sep = get_sep(f)
+    df = pd.read_csv(f, sep=sep, header=None)
     df.dropna(inplace=True)
     df = df[np.vectorize(is_chr)(df[0], chromosome)]
     df = df[np.vectorize(is_chr)(df[2], chromosome)]
     df = df.loc[np.abs(df[1]-df[3]) <= ((distance+10) * res), :]
     df[1] //= res
     df[3] //= res
-
+    bias = read_bias(bias, chromosome, res)
     if bias:
-        bdf = pd.read_csv(bias, sep='\t', header=None)
-        biases = np.nan_to_num(bdf[0], nan=np.Inf)
-        biases[biases < 0.2] = np.Inf
-        df[4] = df[4] / (biases[df[1]] * biases[df[3]])
+        factors = np.vectorize(bias.get)(df[1], 1)
+        df[4] = np.divide(df[4], factors)
+        factors = np.vectorize(bias.get)(df[3], 1)
+        df[4] = np.divide(df[4], factors)
 
     df = df.loc[df[4] > 0, :]
 

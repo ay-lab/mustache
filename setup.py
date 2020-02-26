@@ -24,7 +24,6 @@ setup(
         'cooler',
         'hic-straw',
         'numpy',
-        'matplotlib',
         'requests',
         'scipy',
         'pandas',

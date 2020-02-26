@@ -7,7 +7,13 @@ For more information read the full paper: <a href="">TBA</a>.
 ## Installation
 
 See below for usage examples.
-
+### Conda
+```bash
+git clone https://github.com/ay-lab/mustache
+conda env create -f ./mustache/environment.yml
+conda activate mustache
+conda run mustache ...arguments
+```
 ### PIP
 
 ```bash
@@ -26,8 +32,9 @@ cd mustache
 
 ### Dependencies
 
-Mustach uses some python packages to accomplish its mission. These are the packages used by mustache:
+Mustach uses these python packages:
 
+1. python >= 3.6
 1. numpy
 2. pandas
 3. matplotlib
@@ -45,7 +52,7 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 - Run Mustache on provided example data for chromosome 21 of HMEC cell line from Rao et al. (selected due to file size restrictions) with KR normalization in 5kb resolution as follows.
 
 ```bash
-mustache -f ./chr21_5kb.RAWobserved -b ./chr21_5kb.KRnorm -c 21 -r 5kb -pt 0.1 -o chr21_out.tsv
+mustache -f ./data/chr21_5kb.RAWobserved -b ./data/chr21_5kb.KRnorm -c 21 -r 5kb -pt 0.1 -o chr21_out.tsv
 ```
 
 where -f is the raw contact map, -b is the bias (normalization vector) file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
@@ -78,9 +85,9 @@ where -f is our input file, -c is the subject chromosome, -r is the resolution, 
 | **-r**                | **--resolution** | Resolution of the provided contact map.                                                                 |
 | **-o**                | **--outfile**    | Name of the output file.                                                                                |
 | _Optional Parameters_ |                  |                                                                                                         |
-| **-b**                | **--biases**     | Location of biases (normalization) file for contact map (See below for format).                                   |
+| **-b**                | **--biases**     | Location of biases (normalization) file for contact map (See below for format).                         |
 | **-p**                | **--processes**  | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage. |
-| **-pt**                | **--pThreshold**  | P-Value threshold for an interaction to be reported in the final output file. Default is 0.2 |
+| **-pt**               | **--pThreshold** | P-Value threshold for an interaction to be reported in the final output file. Default is 0.2            |
 | **-sz**               | **--sigmaZero**  | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                     |
 | **-oc**               | **--octaves**    | Octaves parameter for Mustache. Default is 2.                                                           |
 | **-i**                | **--iterations** | Iteration count parameter for Mustache. Default is experimentally chosen for 5Kb resolution.            |
@@ -108,13 +115,12 @@ To use this input mode, we require a contact map and a bias/normalization vector
 
 Bias file is a list of normalization factors. This means contact counts will be _divided_ by their corresponding factors.
 
-| Factor |
-| ------ |
-| NaN    |
-| 1.12   |
-| 0.1    |
+| Chromosome | Midpoint | Factor |
+| ---------- | -------- | ------ |
+| chr1       | 5000     | NaN    |
+| chr1       | 10000    | 1.12   |
+| chr1       | 15000    | 0.1    |
 
-Where the line number is equal to the bin number. So if your resolution is 5Kb, first line is the factor for 0-5Kb bin.
 
 #### 2. Juicer .hic Files
 
