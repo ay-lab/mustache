@@ -1,8 +1,8 @@
 # Mustache
 
-Mustache(Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Ferhat Ay (ferhatay@lji.org), Stefano Lonardi, and Halil Tuvan Gezer.
-Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps.Mustache uses recent technical advances in scale-space theory in Computer Vision to detect blob-shaped objects in a multi-scale representation of the contact map parametrized by the size of the smoothing kernel. For more information read the full
-paper: <a href="">TBA</a>.
+Mustache (Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi and Ferhat Ay (ferhatay@lji.org).
+Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps. Mustache uses recent technical advances in scale-space theory in Computer Vision to detect blob-shaped objects in a multi-scale representation of the contact map parametrized by the size of the smoothing kernel. 
+For more information read the full paper: <a href="">TBA</a>.
 
 ## Installation
 
@@ -40,9 +40,9 @@ Mustach uses some python packages to accomplish its mission. These are the packa
 
 ## Examples
 
-#### Example for running Mustache with a contact map and a normalization vector (bias)
+#### Example 1: Running Mustache with a contact map and a normalization/bias vector
 
-- Run Mustache on provided example data for chromosome 21 of HMEC cell line (from Rao et al.) with KR normalization in 5kb resolution as follows.
+- Run Mustache on provided example data for chromosome 21 of HMEC cell line from Rao et al. (selected due to file size restrictions) with KR normalization in 5kb resolution as follows.
 
 ```bash
 mustache -f ./chr21_5kb.RAWobserved -b ./chr21_5kb.KRnorm -c 21 -r 5kb -pt 0.1 -o chr21_out.tsv
@@ -50,7 +50,7 @@ mustache -f ./chr21_5kb.RAWobserved -b ./chr21_5kb.KRnorm -c 21 -r 5kb -pt 0.1 -
 
 where -f is the raw contact map, -b is the bias (normalization vector) file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
 
-#### Example for running Mustache with a .hic file
+#### Example 2: Running Mustache with a .hic file
 
 - Acquire the .hic format file for HFFc6 Micro-C from <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">4D Nucleome Data Portal</a>. Run Mustache as follows.
 
@@ -60,7 +60,7 @@ mustache -f ./4DNFIPC7P27B.hic -c 7 -r 5kb -pt 0.001 -o hic_out.tsv
 
 where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
 
-#### Example for running Mustache with a .cool file
+#### Example 3: Running Mustache with a .cool file
 
 ```bash
 wget ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.5kb.cool
@@ -101,7 +101,7 @@ Mustache uses <a href="https://github.com/mirnylab/cooler">Cooler package to rea
 #### Text Contact Maps
 
 Contact maps need to have the following format. They must not have a header.
-Values must be separated by a tab.
+The values must be separated by a tab.
 
 | Chromosome 1 | Midpoint 1 | Chromosome 2 | Midpoint 2 | Contact Count |
 | ------------ | ---------- | ------------ | ---------- | ------------- |
@@ -125,6 +125,6 @@ Where the line number is equal to the bin number. So if your resolution is 5Kb, 
 
 ### Output
 
-Output of Mustache is a TSV file. It's format is as follows
+Output of Mustache is a TSV file and is formatted as follows
 
 `| Bin 1 Chromosome | Bin 1 Start | Bin 1 End | Bin 2 Chromosome | Bin 2 Start | Bin 2 End | FDR | Mustache Scale for this Detection |`
