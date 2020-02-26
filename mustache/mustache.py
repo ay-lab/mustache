@@ -184,7 +184,7 @@ def read_hic_file(f, chr, res):
     x = np.array(result[0]) // res
     y = np.array(result[1]) // res
     val = np.array(result[2])
-    dist_f = np.abs(x-y) <= (2_000_000 / res)
+    dist_f = np.abs(x-y) <= (2000000 / res)
     x = x[dist_f]
     y = y[dist_f]
     val = val[dist_f]
@@ -257,7 +257,7 @@ def normalize_sparse(x, y, v, cmap, resolution, distance):
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', category=RuntimeWarning)
         distances = np.abs(y-x)
-        filter_size = int(2_000_000 / resolution)
+        filter_size = int(2000000 / resolution)
         for d in range(2 + distance):
             indices = distances == d
             i = kth_diag_indices(cmap, d)
@@ -502,7 +502,7 @@ def regulator(f, outdir, bed="",
 
 
 def process_block(i, start, end, overlap_size, c, chromosome, res, distance, octave_values, o):
-    print(f"Starting block {i+1}/{len(start)}...")
+    print("Starting block ", i+1, "/", len(start), "...", sep='')
     if i == 0:
         mask_size = -1
     elif i == len(start)-1:
@@ -514,7 +514,7 @@ def process_block(i, start, end, overlap_size, c, chromosome, res, distance, oct
     for loop in list(loops):
         if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
             o.append([loop[0], loop[1], loop[2], loop[3]])
-    print(f"Block {i+1} done.")
+    print("Block", i+1, "done.")
 
 
 def main():
@@ -533,7 +533,7 @@ def main():
     if not res:
         print("Error: Invalid resolution")
         return
-    distFilter = 2_000_000
+    distFilter = 2000000
 
     biasf = False
     if args.biasfile:
@@ -560,7 +560,7 @@ def main():
         for significant in o:
             if float(significant[2]) < args.pt:
                 out_file.write(
-                    f'{args.chromosome}\t{significant[0]*res}\t{(significant[0]+1)*res}\t{args.chromosome}\t{significant[1]*res}\t{(significant[1]+1)*res}\t{significant[2]}\t{significant[3]}\n')
+                    str(args.chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' + str(args.chromosome) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) + '\t' + str(significant[3]) + '\n')
 
 
 if __name__ == '__main__':
