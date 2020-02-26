@@ -12,7 +12,7 @@ See below for usage examples.
 git clone https://github.com/ay-lab/mustache
 conda env create -f ./mustache/environment.yml
 conda activate mustache
-conda run mustache ...arguments
+python -m mustache  -f ./data/chr21_5kb.RAWobserved -c 21 -r 5kb -o chr21_out5.tsv -pt 0.05
 ```
 ### PIP
 
