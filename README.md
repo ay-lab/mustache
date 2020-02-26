@@ -7,8 +7,7 @@ Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Mi
 For more information read the full paper on <a href="https://www.biorxiv.org/content/10.1101/2020.02.24.963579v1">bioRxiv</a>. You can also download and visualize our loop calls on Epigenome Browser as a Custom Track Hub using this <a href="https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/Mustache_all_WashU.json">JSON</a> file.  
 
 ## Installation
-
-See below for usage examples.
+For convenience, we provide several ways to install Mustache.
 
 ### Conda
 
@@ -162,3 +161,15 @@ Output of Mustache is a TSV file and is formatted as follows
 If you use Mustache in your work, please cite our <a href="https://www.biorxiv.org/content/10.1101/2020.02.24.963579v1">preprint</a>: 
 
 ##### Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi, Ferhat Ay. Mustache: Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation. bioRxiv 2020.02.24.963579; doi: https://doi.org/10.1101/2020.02.24.963579
+
+## Contact
+
+For problems about installation and technical questions please email:
+
+Halil Tuvan Gezer (tgezer@sabanciuniv.edu)
+
+For general questions about the tool, parameter settings, interpretation of the results and other help please email:
+
+Abbas Roayaei Ardakany (abbas@lji.org), Stefano Lonardi (stelo@cs.ucr.edu) and Ferhat Ay (ferhatay@lji.org)
+
+
