@@ -1,19 +1,24 @@
 # Mustache
 
 Mustache (Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi and Ferhat Ay (ferhatay@lji.org).
-Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps. Mustache uses recent technical advances in scale-space theory in Computer Vision to detect blob-shaped objects in a multi-scale representation of the contact map parametrized by the size of the smoothing kernel. 
+Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps. Mustache uses recent technical advances in scale-space theory in Computer Vision to detect blob-shaped objects in a multi-scale representation of the contact map parametrized by the size of the smoothing kernel.
 For more information read the full paper: <a href="">TBA</a>.
 
 ## Installation
 
 See below for usage examples.
+
 ### Conda
+
+Conda is the recommended way of running mustache as it will take care of the dependencies.
+
 ```bash
 git clone https://github.com/ay-lab/mustache
 conda env create -f ./mustache/environment.yml
 conda activate mustache
 python -m mustache  -f ./data/chr21_5kb.RAWobserved -c 21 -r 5kb -o chr21_out5.tsv -pt 0.05
 ```
+
 ### PIP
 
 ```bash
@@ -33,17 +38,18 @@ cd mustache
 ### Dependencies
 
 Mustach uses these python packages:
+Check [here](environment.yml) for a list of dependancy versions that we know are working with Mustache.
 
 1. python >= 3.6
 1. numpy
-2. pandas
-3. matplotlib
-4. seaborn
-5. scipy
-6. statsmodels
-7. pathlib
-8. cooler
-9. hic-straw
+1. pandas
+1. matplotlib
+1. seaborn
+1. scipy
+1. statsmodels
+1. pathlib
+1. cooler
+1. hic-straw
 
 ## Examples
 
@@ -101,7 +107,7 @@ Input map can be one of the following types.
 
 Similar to Hi-C analysis tools previously developed by our lab (<a href="https://github.com/ay-lab/selfish">Selfish</a> and <a href="https://github.com/ay-lab/fithic">FitHiC</a>), we allow a simple, readable textual input format for Mustache.
 
-To use this input mode, we require a contact map and a bias/normalization vector file. 
+To use this input mode, we require a contact map and a bias/normalization vector file.
 
 1a. Contact map files need to have the following format. They must not have a header. The values must be separated by a tab.
 
@@ -120,7 +126,6 @@ Bias file is a list of normalization factors. This means contact counts will be 
 | chr1       | 5000     | NaN    |
 | chr1       | 10000    | 1.12   |
 | chr1       | 15000    | 0.1    |
-
 
 #### 2. Juicer .hic Files
 
