@@ -1,7 +1,10 @@
 # Mustache
 
 Mustache (Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi and Ferhat Ay (ferhatay@lji.org).
-Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps. Mustache uses recent technical advances in scale-space theory in Computer Vision to detect chromatin loops caused by interaction of DNA segments with a variable size. For more information read the full paper on <a href="https://www.biorxiv.org/content/10.1101/2020.02.24.963579v1">bioRxiv</a>. You can also download and visualize our loop calls on Epigenome Browser as a Custom Track Hub using this <a href="https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/Mustache_all_WashU.json">JSON</a> file.  
+
+Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps. Mustache uses recent technical advances in scale-space theory in Computer Vision to detect chromatin loops caused by interaction of DNA segments with a variable size. 
+
+For more information read the full paper on <a href="https://www.biorxiv.org/content/10.1101/2020.02.24.963579v1">bioRxiv</a>. You can also download and visualize our loop calls on Epigenome Browser as a Custom Track Hub using this <a href="https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/Mustache_all_WashU.json">JSON</a> file.  
 
 ## Installation
 
@@ -9,8 +12,12 @@ See below for usage examples.
 
 ### Conda
 
-Conda is the recommended way of running mustache as it will take care of the dependencies. Suggested way to install conda is to use the installer that is appropriate for your system from the <a href="https://docs.conda.io/en/latest/miniconda.html/">Miniconda</a> page.
+Conda is the recommended way of running Mustache as it will take care of the dependencies. 
+
+Suggested way to install conda is to use the installer that is appropriate for your system from the <a href="https://docs.conda.io/en/latest/miniconda.html/">Miniconda</a> page.
+
 Make sure your "conda" command specifically calls the executable under the miniconda distribution (e.g., ~/miniconda3/condabin/conda).
+
 If "conda activate" command gives an error when you run it the first time then you will have to run "conda init bash" once.  
 
 ```bash
@@ -108,17 +115,17 @@ where -f is our input file, -c is the subject chromosome, -r is the resolution, 
 | **-i**                | **--iterations** | Iteration count parameter for Mustache. Default is experimentally chosen for 5Kb resolution.            |
 | **-V**                | **--version**    | Shows the version of the tool.                                                                          |
 
-### Input Formats
+## Input Formats
 
 Input map can be one of the following types.
 
-#### 1. Text format (contact counts file + bias file)
+### 1. Text format (contact counts file + bias file)
 
 Similar to Hi-C analysis tools previously developed by our lab (<a href="https://github.com/ay-lab/selfish">Selfish</a> and <a href="https://github.com/ay-lab/fithic">FitHiC</a>), we allow a simple, readable textual input format for Mustache.
 
 To use this input mode, we require a contact map and a bias/normalization vector file.
 
-1a. Contact map files need to have the following format. They must not have a header. The values must be separated by a tab.
+##### 1a. Contact map files need to have the following format. They must not have a header. The values must be separated by a tab.
 
 | Chromosome 1 | Midpoint 1 | Chromosome 2 | Midpoint 2 | Contact Count |
 | ------------ | ---------- | ------------ | ---------- | ------------- |
@@ -126,7 +133,7 @@ To use this input mode, we require a contact map and a bias/normalization vector
 | chr1         | 5000       | chr1         | 85000      | 12            |
 | ...          | ...        | ...          | ...        | ...           |
 
-1b. Bias files need to have the following format. They must not have a header. Bias file must use the same midpoint format as the contact maps.
+##### 1b. Bias files need to have the following format. They must not have a header. Bias file must use the same midpoint format as the contact maps.
 
 Bias file is a list of normalization factors. This means contact counts will be _divided_ by their corresponding factors.
 
@@ -136,21 +143,22 @@ Bias file is a list of normalization factors. This means contact counts will be 
 | chr1       | 10000    | 1.12   |
 | chr1       | 15000    | 0.1    |
 
-#### 2. Juicer .hic Files
+### 2. Juicer .hic Files
 
 Mustache uses <a href="https://github.com/aidenlab/straw">Juicer's</a> straw tool to read .hic files.
 
-#### 3. Cooler .cool, and .mcool Files
+### 3. Cooler .cool, and .mcool Files
 
 Mustache uses <a href="https://github.com/mirnylab/cooler">Cooler package to read .cool, and .mcool files.</a>
 
-### Output
+## Output format
 
 Output of Mustache is a TSV file and is formatted as follows
 
 `| Bin 1 Chromosome | Bin 1 Start | Bin 1 End | Bin 2 Chromosome | Bin 2 Start | Bin 2 End | FDR | Mustache Scale for this Detection |`
 
-### Citation
-If you use Mustache in your work, please cite our <a href="https://www.biorxiv.org/content/10.1101/2020.02.24.963579v1">preprint</a> below: 
+## Citation
+
+If you use Mustache in your work, please cite our <a href="https://www.biorxiv.org/content/10.1101/2020.02.24.963579v1">preprint</a>: 
 
 ##### Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi, Ferhat Ay. Mustache: Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation. bioRxiv 2020.02.24.963579; doi: https://doi.org/10.1101/2020.02.24.963579
