@@ -80,6 +80,14 @@ def parse_args(args):
                         ICE or KR norm for each locus for contact map are read from BIASFILE",
                         required=False)
     parser.add_argument(
+        "-st",
+        "--sparsityThreshold",
+        dest="st",
+        type=float,
+        default=0.88,
+        help="OPTIONAL: Mustache filters out contacts in sparse areas, you can relax this for sparse datasets(i.e. -st 0.8). Default value is 0.88.",
+        required=False)
+    parser.add_argument(
         "-pt",
         "--pThreshold",
         dest="pt",
@@ -334,7 +342,7 @@ def normalize_sparse(x, y, v, cmap, resolution, distance):
             cmap[i] = vals
 
 
-def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values):
+def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values, st):
 
     c = np.copy(cc[start:end, start:end])
 
@@ -430,7 +438,7 @@ def mustache(cc, chromosome, res, start, end, mask_size, distance, octave_values
         s = 2*s
         c2 = np.sum(nz[x[i]-s:x[i]+s+1, y[i]-s:y[i]+s+1]) / \
             ((2*s+1)**2)
-        if c1 < 0.88 or c2 < 0.6:
+        if c1 < st or c2 < 0.6:
             nonsparse[i] = False
     x = x[nonsparse]
     y = y[nonsparse]
@@ -478,6 +486,7 @@ def regulator(f, outdir, bed="",
               res=5000,
               sigma0=1.6,
               s=10,
+              st=0.88,
               octaves=2,
               verbose=True,
               nprocesses=4,
@@ -527,7 +536,7 @@ def regulator(f, outdir, bed="",
         processes = []
         for i in range(len(start)):
             p = Process(target=process_block, args=(
-                i, start, end, overlap_size, c, chromosome, res, distance, octave_values, o))
+                i, start, end, overlap_size, c, chromosome, res, distance, octave_values, o, st))
             p.start()
             processes.append(p)
             if len(processes) >= nprocesses or i == (len(start) - 1):
@@ -537,7 +546,7 @@ def regulator(f, outdir, bed="",
         return list(o)
 
 
-def process_block(i, start, end, overlap_size, c, chromosome, res, distance, octave_values, o):
+def process_block(i, start, end, overlap_size, c, chromosome, res, distance, octave_values, o, st):
     print("Starting block ", i+1, "/", len(start), "...", sep='')
     if i == 0:
         mask_size = -1
@@ -546,7 +555,7 @@ def process_block(i, start, end, overlap_size, c, chromosome, res, distance, oct
     else:
         mask_size = overlap_size
     loops = mustache(
-        c, chromosome, res, start[i], end[i], mask_size, distance, octave_values)
+        c, chromosome, res, start[i], end[i], mask_size, distance, octave_values, st)
     for loop in list(loops):
         if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
             o.append([loop[0], loop[1], loop[2], loop[3]])
@@ -585,6 +594,7 @@ def main():
                   sigma0=args.s_z,
                   s=args.s,
                   verbose=args.verbose,
+                  st=args.st,
                   distance_filter=distFilter,
                   nprocesses=args.nprocesses,
                   bias=biasf,
