@@ -29,9 +29,9 @@ conda activate mustache
 and then run one of these three commands:
 
 ```
-1) python -m mustache  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1
-2) python3 ./mustache/mustache/mustache.py  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1
-3) ./mustache/mustache/mustache.py  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1
+1) python -m mustache  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1 -st 0.8
+2) python3 ./mustache/mustache/mustache.py  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1 -st 0.8
+3) ./mustache/mustache/mustache.py  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1 -st 0.8
 ```
 
 ### Docker
