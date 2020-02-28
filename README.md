@@ -119,7 +119,7 @@ where -f is our input file, -c is the subject chromosome, -r is the resolution, 
 | **-p**                | **--processes**         | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage.                     |
 | **-pt**               | **--pThreshold**        | P-Value threshold for an interaction to be reported in the final output file. Default is 0.2                                |
 | **-sz**               | **--sigmaZero**         | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                                         |
-| **-st**               | **--sparsityThreshold** | Mustache filters out contacts in sparse areas, you can relax this for sparse datasets(i.e. -st 0.8). Default value is 0.88. |
+| **-st**               | **--sparsityThreshold** | Mustache filters out contacts in sparse areas, you can relax this for sparse datasets (e.g., -st 0.8). Default value is 0.88. |
 | **-oc**               | **--octaves**           | Octaves parameter for Mustache. Default is 2.                                                                               |
 | **-i**                | **--iterations**        | Iteration count parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                                |
 | **-V**                | **--version**           | Shows the version of the tool.                                                                                              |
