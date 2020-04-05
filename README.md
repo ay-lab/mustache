@@ -29,9 +29,9 @@ conda activate mustache
 and then run one of these three commands:
 
 ```
-1) python -m mustache  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1 -st 0.8
-2) python3 ./mustache/mustache/mustache.py  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1 -st 0.8
-3) ./mustache/mustache/mustache.py  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o chr21_out5.tsv -pt 0.1 -st 0.8
+1) python -m mustache  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -ch 21 -r 5kb -o chr21_out5.tsv -pt 0.1 -st 0.8
+2) python3 ./mustache/mustache/mustache.py  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -ch 21 -r 5kb -o chr21_out5.tsv -pt 0.1 -st 0.8
+3) ./mustache/mustache/mustache.py  -f ./mustache/data/chr21_5kb.RAWobserved -b ./mustache/data/chr21_5kb.KRnorm -ch 21 -r 5kb -o chr21_out5.tsv -pt 0.1 -st 0.8
 ```
 
 ### Docker
@@ -40,7 +40,7 @@ We have a Docker container that allows running Mustache out of the box. You can 
 
 ```bash
 docker run -it aylab/mustache
-mustache -f /mustache/data/chr21_5kb.RAWobserved -b /mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o ./chr21_out5.tsv -pt 0.1
+mustache -f /mustache/data/chr21_5kb.RAWobserved -b /mustache/data/chr21_5kb.KRnorm -ch 21 -r 5kb -o ./chr21_out5.tsv -pt 0.1
 ```
 
 ### PIP
@@ -82,29 +82,29 @@ Check [here](environment.yml) for a list of dependency versions that we know are
 - Run Mustache on provided example data for chromosome 21 of HMEC cell line from Rao et al. (selected due to file size restrictions) with KR normalization in 5kb resolution as follows.
 
 ```bash
-mustache -f ./data/chr21_5kb.RAWobserved -b ./data/chr21_5kb.KRnorm -c 21 -r 5kb -pt 0.1 -o chr21_out.tsv
+mustache -f ./data/chr21_5kb.RAWobserved -b ./data/chr21_5kb.KRnorm -ch 21 -r 5kb -pt 0.1 -o chr21_out.tsv
 ```
 
-where -f is the raw contact map, -b is the bias (normalization vector) file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
+where -f is the raw contact map, -b is the bias (normalization vector) file, -ch is the subject chromosome, -r is the resolution, and -o is the output file.
 
 #### Example 2: Running Mustache with a .hic file
 
 - Acquire the .hic format file for HFFc6 Micro-C from <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">4D Nucleome Data Portal</a>. Run Mustache as follows.
 
 ```bash
-mustache -f ./4DNFIPC7P27B.hic -c 7 -r 5kb -pt 0.001 -o hic_out.tsv
+mustache -f ./4DNFIPC7P27B.hic -ch 7 -r 5kb -pt 0.001 -o hic_out.tsv
 ```
 
-where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
+where -f is our input file, -ch is the subject chromosome, -r is the resolution, and -o is the output file.
 
 #### Example 3: Running Mustache with a .cool file
 
 ```bash
 wget ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.5kb.cool
-mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -c chr12 -r 5kb -pt 0.05 -o cooler_out.tsv
+mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -ch chr12 -r 5kb -pt 0.05 -o cooler_out.tsv
 ```
 
-where -f is our input file, -c is the subject chromosome, -r is the resolution, and -o is the output file.
+where -f is our input file, -ch is the subject chromosome, -r is the resolution, and -o is the output file.
 
 ## Parameters
 
