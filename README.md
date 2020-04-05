@@ -40,7 +40,7 @@ We have a Docker container that allows running Mustache out of the box. You can 
 
 ```bash
 docker run -it aylab/mustache
-mustache -f /mustache/data/chr21_5kb.RAWobserved -b /mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o ./chr21_out5.tsv -pt 0.05
+mustache -f /mustache/data/chr21_5kb.RAWobserved -b /mustache/data/chr21_5kb.KRnorm -c 21 -r 5kb -o ./chr21_out5.tsv -pt 0.1
 ```
 
 ### PIP
