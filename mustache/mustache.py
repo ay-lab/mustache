@@ -273,12 +273,12 @@ def read_hic_file(f, chr, chr2, res):
     :return: Numpy matrix of contact counts
     """
     result = straw.straw('KR', f, str(chr), str(chr2), 'BP', res)
-
     x = np.array(result[0]) // res
     y = np.array(result[1]) // res
     val = np.array(result[2])
+    val[np.isnan(val)] = 0
     if(chr==chr2):
-        dist_f = np.abs(x-y) <= (2000000 / res)
+        dist_f = np.logical_and(np.abs(x-y) <= (2000000 / res),val > 0)
         x = x[dist_f]
         y = y[dist_f]
         val = val[dist_f]
