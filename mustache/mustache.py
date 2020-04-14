@@ -179,6 +179,8 @@ def get_sep(f):
                 return ' '
             if "," in line:
                 return ','
+            if len(line.split(' '))==1:
+                return ' '
             break
     raise FileNotFoundError
 
@@ -186,20 +188,36 @@ def get_sep(f):
 def read_bias(f, chromosome, res):
     """
     :param f: Path to the bias file
-    :return: Dictionary where keys are the bin coordinates and values are the bias value to multiply them with.
+    :return: Dictionary where keys are the bin coordinates and values are the bias values.
     """
     d = defaultdict(lambda: 1.0)
     if f:
         sep = get_sep(f)
         with open(f) as file:
-            for line in file:
+            for pos,line in enumerate(file):
                 line = line.strip().split(sep)
-                if is_chr(line[0], chromosome):
-                    val = float(line[2])
+                if len(line)==3:
+                    if is_chr(line[0], chromosome):
+                        val = float(line[2])
+                        if not np.isnan(val):
+                            if val<0.2:
+                                d[(float(line[1]) // res)] = np.Inf
+                            else:
+                                d[(float(line[1]) // res)] = val
+                        else:
+                            d[(float(line[1]) // res)] = np.Inf
+							
+                elif len(line)==1:
+                    val = float(line[0])
                     if not np.isnan(val):
-                        d[(float(line[1]) // res)] = val
+                        if val<0.2:
+                            d[pos] = np.Inf
+                        else:
+                            d[pos] = val
                     else:
-                        d[(float(line[1]) // res)] = np.Inf
+                       d[pos] = np.Inf
+				
+				
         return d
     return False
 
@@ -208,24 +226,42 @@ def read_pd(f, distance, res, bias, chromosome):
     sep = get_sep(f)
     df = pd.read_csv(f, sep=sep, header=None)
     df.dropna(inplace=True)
-    df = df[np.vectorize(is_chr)(df[0], chromosome)]
-    df = df[np.vectorize(is_chr)(df[2], chromosome)]
-    df = df.loc[np.abs(df[1]-df[3]) <= ((distance+10) * res), :]
-    df[1] //= res
-    df[3] //= res
-    bias = read_bias(bias, chromosome, res)
-    if bias:
-        factors = np.vectorize(bias.get)(df[1], 1)
-        df[4] = np.divide(df[4], factors)
-        factors = np.vectorize(bias.get)(df[3], 1)
-        df[4] = np.divide(df[4], factors)
+    if df.shape[1]==5:
+        df = df[np.vectorize(is_chr)(df[0], chromosome)]
+        df = df[np.vectorize(is_chr)(df[2], chromosome)]
+        df = df.loc[np.abs(df[1]-df[3]) <= ((distance+10) * res), :]
+        df[1] //= res
+        df[3] //= res
+        bias = read_bias(bias, chromosome, res)
+        if bias:
+            factors = np.vectorize(bias.get)(df[1], 1)
+            df[4] = np.divide(df[4], factors)
+            factors = np.vectorize(bias.get)(df[3], 1)
+            df[4] = np.divide(df[4], factors)
 
-    df = df.loc[df[4] > 0, :]
+        df = df.loc[df[4] > 0, :]
 
-    x = np.min(df.loc[:, [1, 3]], axis=1)
-    y = np.max(df.loc[:, [1, 3]], axis=1)
-    val = np.array(df[4])
+        x = np.min(df.loc[:, [1, 3]], axis=1)
+        y = np.max(df.loc[:, [1, 3]], axis=1)
+        val = np.array(df[4])
+    
+    elif df.shape[1]==3:
+        df = df.loc[np.abs(df[1]-df[0]) <= ((distance+10) * res), :]
+        df[0] //= res
+        df[1] //= res
+        bias = read_bias(bias, chromosome, res)
+        if bias:
+            factors = np.vectorize(bias.get)(df[0], 1)
+            df[2] = np.divide(df[2], factors)
+            factors = np.vectorize(bias.get)(df[1], 1)
+            df[2] = np.divide(df[2], factors)
 
+        df = df.loc[df[2] > 0, :]
+
+        x = np.min(df.loc[:, [0, 1]], axis=1)
+        y = np.max(df.loc[:, [0, 1]], axis=1)
+        val = np.array(df[2])  
+    
     return x,y,val
 
 
@@ -368,7 +404,7 @@ def normalize_sparse(x, y, v, resolution, distance):
             local_mean = s / counts
             local_mean[counts < 30] = mean
             local_var[counts < 30] = std2
-
+			
             np.nan_to_num(local_mean, copy=False,
                           neginf=mean, posinf=mean, nan=mean)
 
