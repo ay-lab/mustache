@@ -1,5 +1,7 @@
-<img src="images/mustache.png" width="100">
+
 # Mustache
+
+<img src="images/mustache.png" width="100">
 
 Mustache (Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi and Ferhat Ay (ferhatay@lji.org).
 
