@@ -1,5 +1,5 @@
 
-# Mustache
+# Mustache <img src="images/mustache.png" width="100">
 
 <img src="images/mustache.png" width="100">
 
