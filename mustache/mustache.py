@@ -222,14 +222,14 @@ def read_bias(f, chromosome, res):
     return False
 
 
-def read_pd(f, distance, res, bias, chromosome):
+def read_pd(f, distance_in_bp, bias, chromosome, res):
     sep = get_sep(f)
     df = pd.read_csv(f, sep=sep, header=None)
     df.dropna(inplace=True)
     if df.shape[1]==5:
         df = df[np.vectorize(is_chr)(df[0], chromosome)]
         df = df[np.vectorize(is_chr)(df[2], chromosome)]
-        df = df.loc[np.abs(df[1]-df[3]) <= ((distance+10) * res), :]
+        df = df.loc[np.abs(df[1]-df[3]) <= ((distance_in_bp/res+1) * res), :]
         df[1] //= res
         df[3] //= res
         bias = read_bias(bias, chromosome, res)
@@ -246,7 +246,7 @@ def read_pd(f, distance, res, bias, chromosome):
         val = np.array(df[4])
     
     elif df.shape[1]==3:
-        df = df.loc[np.abs(df[1]-df[0]) <= ((distance+10) * res), :]
+        df = df.loc[np.abs(df[1]-df[0]) <= ((distance_in_bp/res+1) * res), :]
         df[0] //= res
         df[1] //= res
         bias = read_bias(bias, chromosome, res)
@@ -265,7 +265,7 @@ def read_pd(f, distance, res, bias, chromosome):
     return x,y,val
 
 
-def read_hic_file(f, chr, chr2, res):
+def read_hic_file(f, distance_in_bp, chr, chr2, res):
     """
     :param f: .hic file path
     :param chr: Which chromosome to read the file for
@@ -277,21 +277,27 @@ def read_hic_file(f, chr, chr2, res):
     y = np.array(result[1]) // res
     val = np.array(result[2])
     val[np.isnan(val)] = 0
+
     if(chr==chr2):
-        dist_f = np.logical_and(np.abs(x-y) <= (2000000 / res),val > 0)
+        dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
         x = x[dist_f]
         y = y[dist_f]
         val = val[dist_f]
 
+	
     return np.array(x),np.array(y),np.array(val)
 
-def read_cooler(f, chr, chr2,res):
+def read_cooler(f, distance_in_bp, chr, chr2):
     """
     :param f: .cool file path
     :param chr: Which chromosome to read the file for
     :return: Numpy matrix of contact counts
     """
     clr = cooler.Cooler(f)
+    res = clr.binsize
+    if chr not in clr.chromnames or chr2 not in clr.chromnames:
+        raise NameError('wrong chromosome name!')
+		
     if chr == chr2:
         result = clr.matrix(balance=True,sparse=True).fetch(chr) #,as_pixels=True, join=True
     else:
@@ -302,21 +308,22 @@ def read_cooler(f, chr, chr2,res):
     x = result.row
     y = result.col
     val = result.data
-	
+    
+    val[np.isnan(val)] = 0
 	# result = result[np.logical_not(np.isnan(result['count']))]
     # x = np.array(result['start1']) // res
     # y = np.array(result['start2']) // res
     # val = np.array(result['count'])
 
     if(chr==chr2):
-        dist_f = np.abs(x-y) <= (2000000 / res)
+        dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
         x = x[dist_f]
         y = y[dist_f]
         val = val[dist_f]
 
-    return np.array(x),np.array(y),np.array(val)
+    return np.array(x),np.array(y),np.array(val), res
 
-def read_mcooler(f, chr, chr2, res):
+def read_mcooler(f, distance_in_bp, chr, chr2, res):
     """
     :param f: .cool file path
     :param chr: Which chromosome to read the file for
@@ -325,6 +332,9 @@ def read_mcooler(f, chr, chr2, res):
     """
     uri = '%s::/resolutions/%s' % (f, res)
     clr = cooler.Cooler(uri)
+    if chr not in clr.chromnames or chr2 not in clr.chromnames:
+        raise NameError('wrong chromosome name!')
+		
     if chr == chr2:
         result = clr.matrix(balance=True,sparse=True).fetch(chr)#as_pixels=True, join=True
     else:
@@ -332,16 +342,19 @@ def read_mcooler(f, chr, chr2, res):
     
     result = sparse.triu(result)
     np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+
     x = result.row
     y = result.col
     val = result.data
-	
+
+    val[np.isnan(val)] = 0
+
     if(chr==chr2):
-        dist_f = np.abs(x-y) <= (2000000 / res)
+        dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
         x = x[dist_f]
         y = y[dist_f]
         val = val[dist_f]
-	
+
     return np.array(x),np.array(y),np.array(val)
 
 def get_diags(map):
@@ -371,13 +384,13 @@ def get_diags(map):
     return means, stds
 
 
-def normalize_sparse(x, y, v, resolution, distance):
+def normalize_sparse(x, y, v, resolution, distance_in_px):
     n = max(max(x),max(y)) + 1
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', category=RuntimeWarning)
         distances = np.abs(y-x)
         filter_size = int(2000000 / resolution)
-        for d in range(2 + distance):
+        for d in range(2 + distance_in_px):
             indices = distances == d
             vals = np.zeros(n-d)
             vals[x[indices]] = v[indices]+0.001
@@ -424,7 +437,7 @@ def inter_normalize_map(vals):
     np.nan_to_num(cmap, copy=False, nan=0, posinf=0, neginf=0)
 
 
-def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance, octave_values, st):
+def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_px, octave_values, st):
 
     nz = np.logical_and(c != 0, np.triu(c, 4))
     if np.sum(nz) < 50:
@@ -432,7 +445,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance, oc
     c[np.tril_indices_from(c, 4)] = 2
 
     if chromosome == chromosome2:
-        c[np.triu_indices_from(c, k=(distance+1))] = 2
+        c[np.triu_indices_from(c, k=(distance_in_px+1))] = 2
 
     pAll = np.ones_like(c[nz]) * 2
     Scales = np.ones_like(pAll)
@@ -586,28 +599,28 @@ def regulator(f, outdir, bed="",
         raise FileNotFoundError
 
     octave_values = [sigma0 * (2 ** i) for i in range(octaves)]
-    distance = distance_filter
+    distance_in_bp = distance_filter
 
-    distance = int(math.ceil(distance // res))
 
     print("Reading contact map...")
 
     if f.endswith(".hic"):
-        x, y, v = read_hic_file(f, chromosome,chromosome2, res)
+        x, y, v = read_hic_file(f, distance_in_bp, chromosome,chromosome2, res)
     elif f.endswith(".cool"):
-        x, y, v = read_cooler(f, chromosome,chromosome2, res)
+        x, y, v, res = read_cooler(f, distance_in_bp, chromosome,chromosome2)
     elif f.endswith(".mcool"):
-        x, y, v = read_mcooler(f, chromosome,chromosome2, res)
+        x, y, v = read_mcooler(f, distance_in_bp, chromosome,chromosome2, res)
     else:
-        x, y, v = read_pd(f, distance, res, bias, chromosome)
+        x, y, v = read_pd(f, distance_in_bp, bias, chromosome, res)
 
     print("Normalizing contact map...")
     
+    distance_in_px = int(math.ceil(distance_in_bp // res))
     if chromosome == chromosome2:
         n = max(max(x), max(y)) + 1
-        normalize_sparse(x, y, v, res, distance)
-        CHUNK_SIZE = max(2*distance, 2000)
-        overlap_size = distance
+        normalize_sparse(x, y, v, res, distance_in_px)
+        CHUNK_SIZE = max(2*distance_in_px, 2000)
+        overlap_size = distance_in_px
 
         if n <= CHUNK_SIZE:
             start = [0]
@@ -637,7 +650,7 @@ def regulator(f, outdir, bed="",
                 cc[xc,yc] = vc
                 #             
                 p = Process(target=process_block, args=(
-                    i, start, end, overlap_size, cc, chromosome,chromosome2, res, distance, octave_values, o, st))
+                    i, start, end, overlap_size, cc, chromosome,chromosome2, res, distance_in_px, octave_values, o, st))
                 p.start()
                 processes.append(p)
                 if len(processes) >= nprocesses or i == (len(start) - 1):
@@ -653,7 +666,7 @@ def regulator(f, outdir, bed="",
 	
  
 
-def process_block(i, start, end, overlap_size, cc, chromosome,chromosome2, res, distance, octave_values, o, st):
+def process_block(i, start, end, overlap_size, cc, chromosome,chromosome2, res, distance_in_px, octave_values, o, st):
     print("Starting block ", i+1, "/", len(start), "...", sep='')
     if i == 0:
         mask_size = -1
@@ -662,7 +675,7 @@ def process_block(i, start, end, overlap_size, cc, chromosome,chromosome2, res, 
     else:
         mask_size = overlap_size
     loops = mustache(
-        cc, chromosome,chromosome2, res, start[i], end[i], mask_size, distance, octave_values, st)
+        cc, chromosome,chromosome2, res, start[i], end[i], mask_size, distance_in_px, octave_values, st)
     for loop in list(loops):
         if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
             o.append([loop[0], loop[1], loop[2], loop[3]])
