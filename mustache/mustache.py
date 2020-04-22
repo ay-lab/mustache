@@ -57,6 +57,13 @@ def parse_args(args):
                         dest="f_path",
                         help="REQUIRED: Contact map",
                         required=False)
+    parser.add_argument("-d",
+                        "--distance",
+                        dest="distFilter",
+						type=int,
+						default=2000000,
+                        help="REQUIRED: Maximum distance (in bp) allowed between loop loci",
+                        required=False)
     parser.add_argument("-o",
                         "--outfile",
                         dest="outdir",
@@ -437,7 +444,7 @@ def inter_normalize_map(vals):
     np.nan_to_num(cmap, copy=False, nan=0, posinf=0, neginf=0)
 
 
-def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_px, octave_values, st):
+def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_px, octave_values, st, pt):
 
     nz = np.logical_and(c != 0, np.triu(c, 4))
     if np.sum(nz) < 50:
@@ -516,7 +523,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
 
     o = np.ones_like(c)
     o[nz] = pAll
-    sig_count = np.sum(o < 0.2)
+    sig_count = np.sum(o < pt) #change
     x, y = np.unravel_index(np.argsort(o.ravel()), o.shape)
     so = np.ones_like(c)
     so[nz] = Scales
@@ -548,7 +555,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
         return nz_mean(map[kth_diag_indices(map, k)])
     if chromosome == chromosome2:
         means = np.vectorize(diag_mean, excluded=['map'])(k=y-x, map=c)
-        passing_indices = c[x, y] > 2*means
+        passing_indices = c[x, y] > 2*means #change
         if len(passing_indices) == 0 or np.sum(passing_indices) == 0:
             return []
         x = x[passing_indices]
@@ -581,6 +588,7 @@ def regulator(f, outdir, bed="",
               res=5000,
               sigma0=1.6,
               s=10,
+			  pt=0.1,
               st=0.88,
               octaves=2,
               verbose=True,
@@ -650,7 +658,7 @@ def regulator(f, outdir, bed="",
                 cc[xc,yc] = vc
                 #             
                 p = Process(target=process_block, args=(
-                    i, start, end, overlap_size, cc, chromosome,chromosome2, res, distance_in_px, octave_values, o, st))
+                    i, start, end, overlap_size, cc, chromosome,chromosome2, res, distance_in_px, octave_values, o, st, pt))
                 p.start()
                 processes.append(p)
                 if len(processes) >= nprocesses or i == (len(start) - 1):
@@ -666,7 +674,7 @@ def regulator(f, outdir, bed="",
 	
  
 
-def process_block(i, start, end, overlap_size, cc, chromosome,chromosome2, res, distance_in_px, octave_values, o, st):
+def process_block(i, start, end, overlap_size, cc, chromosome,chromosome2, res, distance_in_px, octave_values, o, st, pt):
     print("Starting block ", i+1, "/", len(start), "...", sep='')
     if i == 0:
         mask_size = -1
@@ -675,7 +683,7 @@ def process_block(i, start, end, overlap_size, cc, chromosome,chromosome2, res, 
     else:
         mask_size = overlap_size
     loops = mustache(
-        cc, chromosome,chromosome2, res, start[i], end[i], mask_size, distance_in_px, octave_values, st)
+        cc, chromosome,chromosome2, res, start[i], end[i], mask_size, distance_in_px, octave_values, st, pt)
     for loop in list(loops):
         if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
             o.append([loop[0], loop[1], loop[2], loop[3]])
@@ -698,7 +706,11 @@ def main():
     if not res:
         print("Error: Invalid resolution")
         return
-    distFilter = 2000000
+
+    distFilter = args.distFilter
+    if not distFilter or distFilter > 2000000:
+        print("The distance limit is set to 2Mb")
+        args.distFilter = 2000000 #change
 
     biasf = False
     if args.biasfile:
@@ -715,8 +727,9 @@ def main():
                   sigma0=args.s_z,
                   s=args.s,
                   verbose=args.verbose,
+				  pt=args.pt,
                   st=args.st,
-                  distance_filter=distFilter,
+                  distance_filter=args.distFilter,
                   nprocesses=args.nprocesses,
                   bias=biasf,
                   chromosome=args.chromosome,
@@ -726,9 +739,9 @@ def main():
         out_file.write(
             "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
         for significant in o:
-            if float(significant[2]) < args.pt:
-                out_file.write(
-                    str(args.chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' + str(args.chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) + '\t' + str(significant[3]) + '\n')
+ #           if float(significant[2]) < args.pt:
+            out_file.write(
+                str(args.chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' + str(args.chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) + '\t' + str(significant[3]) + '\n')
 
 
 if __name__ == '__main__':

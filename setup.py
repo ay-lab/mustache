@@ -10,7 +10,7 @@ setup(
     name="mustache_hic",
     version=__version__,
     description='Mustache is a Hi-C analysis tool',
-    long_description="Mustache is a Hi-C analysis tool",
+    long_description="Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps in high resolutions (10kbp all the way to 500bp and even more).",
     url='http://github.com/ay-lab/mustache/',
     entry_points={
         "console_scripts": ['mustache = mustache.mustache:main']
