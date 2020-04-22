@@ -60,8 +60,6 @@ def parse_args(args):
     parser.add_argument("-d",
                         "--distance",
                         dest="distFilter",
-						type=int,
-						default=2000000,
                         help="REQUIRED: Maximum distance (in bp) allowed between loop loci",
                         required=False)
     parser.add_argument("-o",
@@ -707,10 +705,28 @@ def main():
         print("Error: Invalid resolution")
         return
 
-    distFilter = args.distFilter
-    if not distFilter or distFilter > 2000000:
+    distFilter = parseBP(args.distFilter)#change
+    if not distFilter: 
+        if 200*res >= 2000000:
+            distFilter = 200*res
+            print("The distance limit is set to {}".format(200*res))
+        elif 2000*res <= 2000000:
+            distFilter = 2000*res
+            print("The distance limit is set to {}".format(2000*res))
+        else:
+            distFilter = 2000000
+            print("The distance limit is set to 2Mb")			
+    elif distFilter < 200*res:
+        print("The distance limit is set to {}".format(200*res))
+        distFilter = 200*res
+    elif distFilter > 2000*res:
+        print("The distance limit is set to {}".format(2000*res))
+        distFilter = 2000*res
+    elif distFilter > 2000000:
+        distFilter = 2000000
         print("The distance limit is set to 2Mb")
-        args.distFilter = 2000000 #change
+
+
 
     biasf = False
     if args.biasfile:
@@ -729,7 +745,7 @@ def main():
                   verbose=args.verbose,
 				  pt=args.pt,
                   st=args.st,
-                  distance_filter=args.distFilter,
+                  distance_filter=distFilter,
                   nprocesses=args.nprocesses,
                   bias=biasf,
                   chromosome=args.chromosome,
