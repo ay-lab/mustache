@@ -93,7 +93,7 @@ where -f is the raw contact map, -b is the bias (normalization vector) file, -ch
 - Acquire the .hic format file for HFFc6 Micro-C from <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">4D Nucleome Data Portal</a>. Run Mustache as follows.
 
 ```bash
-mustache -f ./4DNFIPC7P27B.hic -ch 7 -r 5kb -pt 0.001 -o hic_out.tsv
+mustache -f ./4DNFIPC7P27B.hic -ch 1 -r 1kb -pt 0.01 -o hic_out.tsv
 ```
 
 where -f is our input file, -ch is the subject chromosome, -r is the resolution, and -o is the output file.
