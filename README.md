@@ -124,7 +124,11 @@ where -f is our input file, -ch is the subject chromosome, -r is the resolution,
 | **-oc**               | **--octaves**           | Octaves parameter for Mustache. Default is 2.                                                                               |
 | **-i**                | **--iterations**        | Iteration count parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                                |
 | **-V**                | **--version**           | Shows the version of the tool.                                                                                              |
-
+#### Tips
+- For sparser datasets use smaller sparsity thresholds , e.g., -st 0.7 (default=0.88).
+- For very high resolutions (e.g., 1kb) use:
+  - smaller sparsity thresholds , e.g., -st 0.7
+  - less stringnet q-value thresholds, e.g., -pt 0.1
 ## Input Formats
 
 Input map can be one of the following types.
