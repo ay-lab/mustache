@@ -1,3 +1,5 @@
+[![PyPI Latest Release](https://img.shields.io/badge/PYPI-v0.2.4-blue)](https://pypi.org/project/mustache-hic/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # Mustache <img src="images/mustache.png" width="100">
 
@@ -83,7 +85,7 @@ Check [here](environment.yml) for a list of dependency versions that we know are
 - Run Mustache on provided example data for chromosome 21 of HMEC cell line from Rao et al. (selected due to file size restrictions) with KR normalization in 5kb resolution as follows.
 
 ```bash
-mustache -f ./data/chr21_5kb.RAWobserved -b ./data/chr21_5kb.KRnorm -ch 21 -r 5kb -pt 0.1 -o chr21_out.tsv
+mustache -f ./data/chr21_5kb.RAWobserved -b ./data/chr21_5kb.KRnorm -ch 21 -r 5kb -pt 0.1 -o chr21_out.tsv -st 0.8
 ```
 
 where -f is the raw contact map, -b is the bias (normalization vector) file, -ch is the subject chromosome, -r is the resolution, and -o is the output file.
