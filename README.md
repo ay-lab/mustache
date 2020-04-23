@@ -3,7 +3,12 @@
 
 Mustache (Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi and Ferhat Ay (ferhatay@lji.org).
 
-Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps in high resolutions (10kbp all the way to 500bp and even more). Mustache uses recent technical advances in scale-space theory in Computer Vision to detect chromatin loops caused by interaction of DNA segments with a variable size. 
+Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps in high resolutions (10kbp all the way to 500bp and even more). Mustache uses recent technical advances in scale-space theory in Computer Vision to detect chromatin loops caused by interaction of DNA segments with a variable size. Here is an example of Mustache loops detected for HFFc6 Micro-C in 1kb resolution:
+
+<p align="center">
+  <img src="images/example_hffc6_chr1_1kb.png" width="600" class="center">
+</p>
+
 
 For more information read the full paper on <a href="https://www.biorxiv.org/content/10.1101/2020.02.24.963579v1">bioRxiv</a>. You can also download and visualize our loop calls on Epigenome Browser as a Custom Track Hub using this <a href="https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/Mustache_all_WashU.json">JSON</a> file.
 
