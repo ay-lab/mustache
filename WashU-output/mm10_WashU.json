@@ -1,0 +1,22 @@
+[
+        {
+        type:"longrange",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/mustache_mESC_WT_combined_2.6B_1kb_01.bed.gz",
+        name:"mESC Micro-C Mustache loops in 1kb resolution for q-val<0.01",
+        fixedscale:{min:0, max:10},
+        showOnHubLoad:true,
+        options: {
+                color:"#004080",
+                displayMode:"arc"
+        },
+        },
+
+        {
+        type:"bigwig",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/mES_CTCF_GSE96107.bw",
+        name:"mm10 CTCF ChIP-seq",
+        height:60,
+        fixedscale:{min:0,max:20},
+        showOnHubLoad:true
+        },
+]

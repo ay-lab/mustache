@@ -1,0 +1,39 @@
+[
+        {
+        type:"longrange",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/HFFc6_HiC_5000_all.bed.gz",
+        name:"HFFc6 Hi-C Mustache loops in 5kb resolution for q-val<0.01",
+        fixedscale:{min:0, max:10},
+        showOnHubLoad:true,
+        options: {
+                color:"#004080",
+                displayMode:"arc"
+        },
+        },
+		
+		{
+        type:"longrange",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/HFFc6_Micro-C_5000_all.bed.gz",
+        name:"HFFc6 Micro-C Mustache loops in 5kb resolution for q-val<0.001",
+        fixedscale:{min:0, max:10},
+        showOnHubLoad:true,
+        options: {
+                  color:"#004080",
+                  displayMode:"arc"
+        },
+        },
+
+        {
+        type:"longrange",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/mustache_HFFc6_Micro-C_q_0.01_1kb.loops.bed.gz",
+        name:"HFFc6 Micro-C Mustache loops in 1kb resolution for q-val<0.01",
+        fixedscale:{min:0, max:10},
+        showOnHubLoad:true,
+        options: {
+                color:"#004080",
+                displayMode:"arc"
+        },
+        },
+
+
+]

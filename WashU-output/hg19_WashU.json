@@ -1,0 +1,78 @@
+[
+
+        {
+        type:"bigwig",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/CTCF_ENCFF629AAF.bigWig",
+        name:"CTCF ChIP-seq",
+        height:60,
+        fixedscale:{min:0,max:20},
+        showOnHubLoad:true
+        },
+
+        {
+        type:"bigwig",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/RAD21_ENCFF312ZNA.bigWig",
+	name:"RAD21 ChIP-seq",
+        height:60,
+        fixedscale:{min:0,max:20},
+        showOnHubLoad:true
+        },
+
+        {
+        type:"bigwig",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/SMC3_ENCFF599KQW.bigWig",
+	name:"SMC3 ChIP-seq",
+        height:60,
+        fixedscale:{min:0,max:20},
+        showOnHubLoad:true
+        },	
+
+	{
+	type:"longrange",
+	url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/GM12878_combined_5000_all.bed.gz",
+	name:"GM12878 Mustache loops for q-val<0.05",
+	fixedscale:{min:0, max:10},
+	showOnHubLoad:true,
+	options: {
+		color:"#004080",	
+		displayMode:"arc"
+	},
+	},
+
+        {
+        type:"longrange",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/HiCCUPS_GM12878_WashU.bed.gz",
+        name:"GM12878 HiCCUPS loops",
+        fixedscale:{min:0, max:10},
+        showOnHubLoad:true,
+        options: {
+                color:"#004080",
+                displayMode:"arc"
+        },
+        },
+
+        {
+        type:"longrange",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/IMR90_5000_all.bed.gz",
+        name:"IMR90 Mustache loops for q-val<0.05",
+        fixedscale:{min:0, max:10},
+        showOnHubLoad:true,
+        options: {
+                color:"#004080",
+                displayMode:"arc"
+        },
+        },
+
+        {
+        type:"longrange",
+        url:"https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/K562_5000_all.bed.gz",
+        name:"K562 Mustache loops for q-val<0.1",
+        fixedscale:{min:0, max:10},
+        showOnHubLoad:true,
+        options: {
+                color:"#004080",
+                displayMode:"arc"
+        },
+        },
+
+]
