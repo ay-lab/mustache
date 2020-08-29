@@ -5,7 +5,7 @@ import sys
 import re
 import math
 import warnings
-
+import time
 from collections import defaultdict
 
 import pandas as pd
@@ -270,14 +270,17 @@ def read_pd(f, distance_in_bp, bias, chromosome, res):
     return x,y,val
 
 
-def read_hic_file(f, distance_in_bp, chr, chr2, res):
+def read_hic_file(f, distance_in_bp, chr1, chr2, res):
     """
     :param f: .hic file path
     :param chr: Which chromosome to read the file for
     :param res: Resolution to extract information from
     :return: Numpy matrix of contact counts
     """
-    result = straw.straw('KR', f, str(chr), str(chr2), 'BP', res)
+    try:
+        result = straw.straw('KR', f, str(chr1), str(chr2), 'BP', res)
+    except:
+        result = straw.straw('VC', f, str(chr1), str(chr2), 'BP', res)
     x = np.array(result[0]) // res
     y = np.array(result[1]) // res
     val = np.array(result[2])
@@ -292,7 +295,7 @@ def read_hic_file(f, distance_in_bp, chr, chr2, res):
 	
     return np.array(x),np.array(y),np.array(val)
 
-def read_cooler(f, distance_in_bp, chr, chr2):
+def read_cooler(f, distance_in_bp, chr1, chr2):
     """
     :param f: .cool file path
     :param chr: Which chromosome to read the file for
@@ -300,35 +303,71 @@ def read_cooler(f, distance_in_bp, chr, chr2):
     """
     clr = cooler.Cooler(f)
     res = clr.binsize
-    if chr not in clr.chromnames or chr2 not in clr.chromnames:
+    if chr1 not in clr.chromnames or chr2 not in clr.chromnames:
         raise NameError('wrong chromosome name!')
-		
-    if chr == chr2:
-        result = clr.matrix(balance=True,sparse=True).fetch(chr) #,as_pixels=True, join=True
+    CHRM_SIZE = clr.chromsizes[chr1]
+    CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
+    start = 0
+    end = CHUNK_SIZE*res #CHUNK_SIZE*res
+    result = []
+    ###########################
+    if chr1 == chr2:
+        #try:
+            #normVec = clr.bins()['weight'].fetch(chr1)
+            #result = clr.matrix(balance=True,sparse=True).fetch(chr1)#as_pixels=True, join=True
+            while start < CHRM_SIZE:
+                temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
+                temp = sparse.triu(temp)
+                np.nan_to_num(temp, copy=False, nan=0, posinf=0, neginf=0)
+                start_in_px = int(start/res)
+                if len(temp.row)==0:
+                    start = start + CHUNK_SIZE*res -  distance_in_bp
+                    end = end + CHUNK_SIZE*res - distance_in_bp                    
+                    print(start,end)
+                    continue
+
+                if result == []:
+                    result+= [list(start_in_px+temp.row),list(start_in_px+temp.col),list(temp.data)]
+                    prev_block = set([(x,y,v) for x,y,v in zip(start_in_px+temp.row,start_in_px+temp.col,temp.data)])                    
+                else:
+                    cur_block = set([(x,y,v) for x,y,v in zip(start_in_px+temp.row,start_in_px+temp.col,temp.data)])
+                    to_add_list = list(cur_block - prev_block)
+                    del prev_block
+                    result[0]+=  [x[0] for x in  to_add_list]
+                    result[1]+=  [x[1] for x in  to_add_list]
+                    result[2]+=  [x[2] for x in  to_add_list]
+                    prev_block = cur_block
+                    del cur_block
+                print(start,end)
+                start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+                end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)                
+        #except:
+            #raise NameError('Reading from the file failed!')
+                x = np.array(result[0])
+                y = np.array(result[1])
+                val = np.array(result[2])
     else:
-        result = clr.matrix(balance=True,sparse=True).fetch(chr, chr2)
-   
-    result = sparse.triu(result)
-    np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
-    x = result.row
-    y = result.col
-    val = result.data
+        result = clr.matrix(balance=True,sparse=True).fetch(chr1, chr2)
+        result = sparse.triu(result)
+        np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+        x = result.row
+        y = result.col
+        val = result.data
+
+    ##########################
     
     val[np.isnan(val)] = 0
-	# result = result[np.logical_not(np.isnan(result['count']))]
-    # x = np.array(result['start1']) // res
-    # y = np.array(result['start2']) // res
-    # val = np.array(result['count'])
 
-    if(chr==chr2):
+    if(chr1==chr2):
         dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
         x = x[dist_f]
         y = y[dist_f]
         val = val[dist_f]
-
+    
+    #return np.array(x),np.array(y),np.array(val), res, normVec
     return np.array(x),np.array(y),np.array(val), res
 
-def read_mcooler(f, distance_in_bp, chr, chr2, res):
+def read_mcooler(f, distance_in_bp, chr1, chr2, res):
     """
     :param f: .cool file path
     :param chr: Which chromosome to read the file for
@@ -337,30 +376,69 @@ def read_mcooler(f, distance_in_bp, chr, chr2, res):
     """
     uri = '%s::/resolutions/%s' % (f, res)
     clr = cooler.Cooler(uri)
-    if chr not in clr.chromnames or chr2 not in clr.chromnames:
+    if chr1 not in clr.chromnames or chr2 not in clr.chromnames:
         raise NameError('wrong chromosome name!')
-		
-    if chr == chr2:
-        result = clr.matrix(balance=True,sparse=True).fetch(chr)#as_pixels=True, join=True
-    else:
-        result = clr.matrix(balance=True,sparse=True).fetch(chr, chr2)
-    
-    result = sparse.triu(result)
-    np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+    CHRM_SIZE = clr.chromsizes[chr1]    
+    CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
+    start = 0
+    end = CHUNK_SIZE*res #CHUNK_SIZE*res
+    result = []
 
-    x = result.row
-    y = result.col
-    val = result.data
+	
+    if chr1 == chr2:
+        try:
+            #result = clr.matrix(balance=True,sparse=True).fetch(chr1)#as_pixels=True, join=True
+            while start < CHRM_SIZE:                
+                temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
+                temp = sparse.triu(temp)
+                np.nan_to_num(temp, copy=False, nan=0, posinf=0, neginf=0)
+                start_in_px = int(start/res)
+                if len(temp.row)==0:
+                    start = start + CHUNK_SIZE*res -  distance_in_bp
+                    end = end + CHUNK_SIZE*res - distance_in_bp
+                    #print('row=0')
+                    print(start,end)
+                    continue
+           
+                if result == []:
+                    result+= [list(start_in_px+temp.row),list(start_in_px+temp.col),list(temp.data)] 
+                    prev_block = set([(x,y,v) for x,y,v in zip(start_in_px+temp.row,start_in_px+temp.col,temp.data)])
+                    #print('result==[]')
+                else:
+                    cur_block = set([(x,y,v) for x,y,v in zip(start_in_px+temp.row,start_in_px+temp.col,temp.data)])
+                    to_add_list = list(cur_block - prev_block)
+                    del prev_block
+                    result[0]+=  [x[0] for x in  to_add_list]
+                    result[1]+=  [x[1] for x in  to_add_list]
+                    result[2]+=  [x[2] for x in  to_add_list]
+                    prev_block = cur_block
+                    del cur_block
+
+                print(start,end)
+                start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+                end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)                
+        except:
+            raise NameError('Reading from the file failed!')
+        x = np.array(result[0])
+        y = np.array(result[1])
+        val = np.array(result[2])
+    else:
+        result = clr.matrix(balance=True,sparse=True).fetch(chr1, chr2)    
+        result = sparse.triu(result)
+        np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+        x = result.row
+        y = result.col
+        val = result.data
 
     val[np.isnan(val)] = 0
-
-    if(chr==chr2):
+    if(chr1==chr2):
         dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
         x = x[dist_f]
         y = y[dist_f]
         val = val[dist_f]
 
     return np.array(x),np.array(y),np.array(val)
+
 
 def get_diags(map):
     """
@@ -455,7 +533,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
     pAll = np.ones_like(c[nz]) * 2
     Scales = np.ones_like(pAll)
     s = 10
-    curr_filter = 1
+    #curr_filter = 1
     scales = {}
     for o in octave_values:
         scales[o] = {}
@@ -471,13 +549,16 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
         Gc = gaussian_filter(c, sigma, truncate=t, order=0)
         scales[o][2] = sigma
 
+        Lp = Gp - Gc
+        Gp = []
+
         sigma = o * 2**((3-1)/s)
         w = 2*math.ceil(2*sigma)+1
         t = (((w - 1)/2)-0.5)/sigma
         Gn = gaussian_filter(c, sigma, truncate=t, order=0)
         scales[o][3] = sigma
 
-        Lp = Gp - Gc
+        #Lp = Gp - Gc
         Lc = Gc - Gn
 
         locMaxP = maximum_filter(
@@ -485,7 +566,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
         locMaxC = maximum_filter(
             Lc, footprint=np.ones((3, 3)), mode='constant')
         for i in range(3, s + 2):
-            curr_filter += 1
+            #curr_filter += 1
             Gc = Gn
 
             sigma = o * 2**((i)/s)
@@ -689,7 +770,7 @@ def process_block(i, start, end, overlap_size, cc, chromosome,chromosome2, res, 
 
 
 def main():
-
+    start_time = time.time()
     args = parse_args(sys.argv[1:])
     print("\n")
 
@@ -751,6 +832,8 @@ def main():
                   chromosome=args.chromosome,
 				  chromosome2=args.chromosome2,
                   octaves=args.octaves)
+    
+    print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),args.chromosome,args.pt,"%.2f" % (time.time()-start_time)))
     with open(args.outdir, 'w') as out_file:
         out_file.write(
             "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
