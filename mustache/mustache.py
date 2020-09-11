@@ -86,6 +86,13 @@ def parse_args(args):
                         ICE or KR norm for each locus for contact map are read from BIASFILE",
                         required=False)
     parser.add_argument(
+        "-cz",
+        "--chromosomeSize",
+        default="",
+        dest="chrSize_file",
+        help="RECOMMENDED: .hic corressponfing chromosome size file.",
+        required=False)
+    parser.add_argument(
         "-st",
         "--sparsityThreshold",
         dest="st",
@@ -270,31 +277,83 @@ def read_pd(f, distance_in_bp, bias, chromosome, res):
     return x,y,val
 
 
-def read_hic_file(f, distance_in_bp, chr1, chr2, res):
+def read_hic_file(f, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     """
     :param f: .hic file path
     :param chr: Which chromosome to read the file for
     :param res: Resolution to extract information from
     :return: Numpy matrix of contact counts
     """
-    try:
-        result = straw.straw('KR', f, str(chr1), str(chr2), 'BP', res)
-    except:
-        result = straw.straw('VC', f, str(chr1), str(chr2), 'BP', res)
+    if not CHRM_SIZE:
+        try:
+            result = straw.straw('KR', f, str(chr1), str(chr2), 'BP', res)  
+        except:
+            result = straw.straw('VC', f, str(chr1), str(chr2), 'BP', res)
+    else:
+
+        CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
+        start = 0
+        end = CHUNK_SIZE*res #CHUNK_SIZE*res
+        result = []
+        try: 
+            while start < CHRM_SIZE:
+                temp = straw.straw("KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)            
+                if len(temp[0])==0:
+                    start = start + CHUNK_SIZE*res -  distance_in_bp
+                    end = end + CHUNK_SIZE*res - distance_in_bp
+                    continue
+                ########################## approach 0
+                if result == []:
+                    result+= temp                             
+                    prev_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
+                else:
+                    cur_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
+                    to_add_list = list(cur_block - prev_block)
+                    del prev_block
+                    result[0]+=  [x[0] for x in  to_add_list]
+                    result[1]+=  [x[1] for x in  to_add_list]
+                    result[2]+=  [x[2] for x in  to_add_list]
+                    prev_block = cur_block
+                    del cur_block
+                start = start + CHUNK_SIZE*res -  distance_in_bp
+                end = end + CHUNK_SIZE*res - distance_in_bp           
+                print(start,end)
+        except:            
+            while start < CHRM_SIZE:
+                temp = straw.straw("VC", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+                if len(temp[0])==0:
+                    break
+            ########################## approach 0
+                if result == []:
+                    result+= temp     
+                    prev_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
+                else:
+                    cur_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
+                    to_add_list = list(cur_block - prev_block)
+                    del prev_block
+                    result[0]+=  [x[0] for x in  to_add_list]
+                    result[1]+=  [x[1] for x in  to_add_list]
+                    result[2]+=  [x[2] for x in  to_add_list]
+                    prev_block = cur_block
+                    del cur_block
+            
+                start = start + CHUNK_SIZE*res -  distance_in_bp
+                end = end + CHUNK_SIZE*res - distance_in_bp
+    
+    ###################### approach 0
     x = np.array(result[0]) // res
     y = np.array(result[1]) // res
     val = np.array(result[2])
     val[np.isnan(val)] = 0
 
-    if(chr==chr2):
+    if(chr1==chr2):
         dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
         x = x[dist_f]
         y = y[dist_f]
         val = val[dist_f]
 
 	
-    return np.array(x),np.array(y),np.array(val)
-
+    return x, y, val 
 def read_cooler(f, distance_in_bp, chr1, chr2):
     """
     :param f: .cool file path
@@ -532,6 +591,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
 
     pAll = np.ones_like(c[nz]) * 2
     Scales = np.ones_like(pAll)
+    vAll = np.zeros_like(pAll)
     s = 10
     #curr_filter = 1
     scales = {}
@@ -582,11 +642,12 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
                 Ln, footprint=np.ones((3, 3)), mode='constant')
 
             willUpdate = np.logical_and \
-                .reduce((pval < pAll, Lc[nz] == locMaxC[nz],
+                .reduce((Lc[nz] > vAll, Lc[nz] == locMaxC[nz],
                          np.logical_or(Lp[nz] == locMaxP[nz],
                                        Ln[nz] == locMaxN[nz]),
                          Lc[nz] > locMaxP[nz],
                          Lc[nz] > locMaxN[nz]))
+            vAll[willUpdate] = Lc[nz][willUpdate]
             Scales[willUpdate] = scales[o][i]
             pAll[willUpdate] = pval[willUpdate]
             Lp = Lc
@@ -663,7 +724,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
     return out
 
 
-def regulator(f, outdir, bed="",
+def regulator(f, CHRM_SIZE, outdir, bed="",
               res=5000,
               sigma0=1.6,
               s=10,
@@ -692,7 +753,7 @@ def regulator(f, outdir, bed="",
     print("Reading contact map...")
 
     if f.endswith(".hic"):
-        x, y, v = read_hic_file(f, distance_in_bp, chromosome,chromosome2, res)
+        x, y, v = read_hic_file(f, CHRM_SIZE, distance_in_bp, chromosome,chromosome2, res)
     elif f.endswith(".cool"):
         x, y, v, res = read_cooler(f, distance_in_bp, chromosome,chromosome2)
     elif f.endswith(".mcool"):
@@ -807,6 +868,15 @@ def main():
         distFilter = 2000000
         print("The distance limit is set to 2Mbp")
 
+    if args.chrSize_file:
+        csz_file = args.chrSize_file
+        csz = pd.read_csv(csz_file,header=None,sep='\t')
+        chrSize_in_bp = {}
+        for i in range(csz.shape[0]):
+            chrSize_in_bp["chr"+str(csz.iloc[i,0]).replace('chr','')] = csz.iloc[i,1]   
+        CHRM_SIZE = chrSize_in_bp["chr"+str(args.chromosome).replace('chr','')]
+    else:
+        CHRM_SIZE = False
 
 
     biasf = False
@@ -818,7 +888,7 @@ def main():
             return
     if not args.chromosome2 or args.chromosome2 == 'n':
         args.chromosome2 = args.chromosome
-    o = regulator(f, args.outdir,
+    o = regulator(f, CHRM_SIZE, args.outdir,
                   bed=args.bed,
                   res=res,
                   sigma0=args.s_z,
