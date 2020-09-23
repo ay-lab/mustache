@@ -127,7 +127,7 @@ where -f is our input file, -ch is the subject chromosome, -r is the resolution,
 | **-sz**               | **--sigmaZero**         | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                                         |
 | **-st**               | **--sparsityThreshold** | Mustache filters out contacts in sparse areas which you can relax for sparse datasets (e.g., -st 0.8). Default value is 0.88. |
 | **-oc**               | **--octaves**           | Octaves parameter for Mustache. Default is 2.                                                                               |
-| **-cz**               | **--chromosomeSize**           | Path to the chr size file. This will make reading faster especially for larger chromosomes.                                                                               |
+| **-cz**               | **--chromosomeSize**           | Path to the chr size file. This will make reading faster especially for higher resolutions or larger chromosomes.                                                                               |
 | **-i**                | **--iterations**        | Iteration count parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                                |
 | **-V**                | **--version**           | Shows the version of the tool.                                                                                              |
 #### Tips
