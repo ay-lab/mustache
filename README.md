@@ -6,7 +6,7 @@ Mustache (Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps us
 Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Micro-C contact maps in high resolutions (10kbp all the way to 500bp and even more). Mustache uses recent technical advances in scale-space theory in Computer Vision to detect chromatin loops caused by interaction of DNA segments with a variable size. Here is an example of Mustache loops detected for HFFc6 Micro-C in 1kb resolution plotted using <a href="https://www.aidenlab.org/juicebox/">Juicebox</a> (loops are enlarged):
 
 <p align="center">
-  <img src="images/example_hffc6_chr1_1kb.png" width="600" class="center">
+  <img src="images/example2_hffc6_chr1_1kb.png" width="600" class="center">
 </p>
 
 
