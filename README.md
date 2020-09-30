@@ -10,7 +10,7 @@ Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Mi
 </p>
 
 
-For more information read the full paper on <a href="https://www.biorxiv.org/content/10.1101/2020.02.24.963579v1">bioRxiv</a>. You can also download and visualize our loop calls on Epigenome Browser as a Custom Track Hub using this <a href="https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/Mustache_all_WashU.json">JSON</a> file.
+For more information read the full paper in <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02167-0">Genome Biology</a>. You can also download and visualize our loop calls on Epigenome Browser as a Custom Track Hub using this <a href="https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/Mustache_all_WashU.json">JSON</a> file.
 
 ## Installation
 
@@ -179,9 +179,9 @@ Output of Mustache is a TSV file and is formatted as follows
 
 ## Citation
 
-If you use Mustache in your work, please cite our <a href="https://www.biorxiv.org/content/10.1101/2020.02.24.963579v1">preprint</a>:
+If you use Mustache in your work, please cite our <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02167-0">paper</a>:
 
-##### Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi, Ferhat Ay. Mustache: Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation. bioRxiv 2020.02.24.963579; doi: https://doi.org/10.1101/2020.02.24.963579
+##### Roayaei Ardakany, A., Gezer, H.T., Lonardi, S. et al. Mustache: multi-scale detection of chromatin loops from Hi-C and Micro-C maps using scale-space representation. Genome Biol 21, 256 (2020). https://doi.org/10.1186/s13059-020-02167-0
 
 ## Contact
 
