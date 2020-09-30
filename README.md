@@ -10,7 +10,7 @@ Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Mi
 </p>
 
 
-For more information read the full paper in <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02167-0">Genome Biology</a>. You can also download and visualize our loop calls on Epigenome Browser as a Custom Track Hub using this <a href="https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/Mustache_all_WashU.json">JSON</a> file.
+For more information, please read the full paper in <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02167-0">Genome Biology</a>. You can also download and visualize our loop calls on Epigenome Browser as a Custom Track Hub using this <a href="https://informaticsdata.liai.org/BioAdHoc/Groups/vd-ay/abbas/epgBrowser/Mustache_all_WashU.json">JSON</a> file.
 
 ## Installation
 
