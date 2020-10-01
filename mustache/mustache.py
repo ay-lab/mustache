@@ -93,6 +93,13 @@ def parse_args(args):
         help="RECOMMENDED: .hic corressponfing chromosome size file.",
         required=False)
     parser.add_argument(
+        "-norm",
+        "--normalization",
+        default="",
+        dest="norm_method",
+        help="RECOMMENDED: Hi-C  normalization method (KR, VC,...).",
+        required=False)
+    parser.add_argument(
         "-st",
         "--sparsityThreshold",
         dest="st",
@@ -277,7 +284,7 @@ def read_pd(f, distance_in_bp, bias, chromosome, res):
     return x,y,val
 
 
-def read_hic_file(f, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
+def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     """
     :param f: .hic file path
     :param chr: Which chromosome to read the file for
@@ -285,10 +292,13 @@ def read_hic_file(f, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     :return: Numpy matrix of contact counts
     """
     if not CHRM_SIZE:
-        try:
-            result = straw.straw('KR', f, str(chr1), str(chr2), 'BP', res)  
-        except:
-            result = straw.straw('VC', f, str(chr1), str(chr2), 'BP', res)
+        if norm_method:
+            result = straw.straw(str(norm_method), f, str(chr1), str(chr2), 'BP', res)
+        else:
+            try:
+                result = straw.straw('KR', f, str(chr1), str(chr2), 'BP', res)  
+            except:
+                result = straw.straw('VC', f, str(chr1), str(chr2), 'BP', res)
     else:
 
         CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
@@ -297,7 +307,10 @@ def read_hic_file(f, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
         result = []
         try: 
             while start < CHRM_SIZE:
-                temp = straw.straw("KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)            
+                if norm_method:
+                    temp = straw.straw(str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+                else:
+                    temp = straw.straw("KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)            
                 if len(temp[0])==0:
                     start = start + CHUNK_SIZE*res -  distance_in_bp
                     end = end + CHUNK_SIZE*res - distance_in_bp
@@ -724,7 +737,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
     return out
 
 
-def regulator(f, CHRM_SIZE, outdir, bed="",
+def regulator(f, norm_method, CHRM_SIZE, outdir, bed="",
               res=5000,
               sigma0=1.6,
               s=10,
@@ -753,7 +766,7 @@ def regulator(f, CHRM_SIZE, outdir, bed="",
     print("Reading contact map...")
 
     if f.endswith(".hic"):
-        x, y, v = read_hic_file(f, CHRM_SIZE, distance_in_bp, chromosome,chromosome2, res)
+        x, y, v = read_hic_file(f, norm_method, CHRM_SIZE, distance_in_bp, chromosome,chromosome2, res)
     elif f.endswith(".cool"):
         x, y, v, res = read_cooler(f, distance_in_bp, chromosome,chromosome2)
     elif f.endswith(".mcool"):
@@ -877,8 +890,8 @@ def main():
         CHRM_SIZE = chrSize_in_bp["chr"+str(args.chromosome).replace('chr','')]
     else:
         CHRM_SIZE = False
-
-
+    
+    
     biasf = False
     if args.biasfile:
         if os.path.exists(args.biasfile):
@@ -888,7 +901,7 @@ def main():
             return
     if not args.chromosome2 or args.chromosome2 == 'n':
         args.chromosome2 = args.chromosome
-    o = regulator(f, CHRM_SIZE, args.outdir,
+    o = regulator(f, args.norm_method, CHRM_SIZE, args.outdir,
                   bed=args.bed,
                   res=res,
                   sigma0=args.s_z,
