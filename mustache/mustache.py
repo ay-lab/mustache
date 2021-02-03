@@ -182,7 +182,7 @@ def is_chr(s, c):
         return 'X' in c
     if 'Y' == c:
         return 'Y' in c
-    return str(c) in re.findall("[1-9][0-9]*", s)
+    return str(c) in re.findall("[1-9][0-9]*", str(s))
 
 
 def get_sep(f):
