@@ -446,8 +446,8 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res):
     :param res: Resolution to extract information from
     :return: Numpy matrix of contact counts
     """
-    #uri = '%s::/resolutions/%s' % (f, res)
-    uri = '%s::/7' % (f)
+    uri = '%s::/resolutions/%s' % (f, res)
+    #uri = '%s::/7' % (f)
     clr = cooler.Cooler(uri)
     if chr1 not in clr.chromnames or chr2 not in clr.chromnames:
         raise NameError('wrong chromosome name!')
