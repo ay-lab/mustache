@@ -303,7 +303,7 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
 
         CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
         start = 0
-        end = CHUNK_SIZE*res #CHUNK_SIZE*res
+        end = min(CHRM_SIZE, CHUNK_SIZE*res) #CHUNK_SIZE*res
         result = []
         try: 
             while start < CHRM_SIZE:
@@ -380,7 +380,7 @@ def read_cooler(f, distance_in_bp, chr1, chr2):
     CHRM_SIZE = clr.chromsizes[chr1]
     CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
     start = 0
-    end = CHUNK_SIZE*res #CHUNK_SIZE*res
+    end = min(CHUNK_SIZE*res, CHRM_SIZE) #CHUNK_SIZE*res
     result = []
     ###########################
     if chr1 == chr2:
@@ -447,13 +447,14 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res):
     :return: Numpy matrix of contact counts
     """
     uri = '%s::/resolutions/%s' % (f, res)
+    #uri = '%s::/7' % (f)
     clr = cooler.Cooler(uri)
     if chr1 not in clr.chromnames or chr2 not in clr.chromnames:
         raise NameError('wrong chromosome name!')
     CHRM_SIZE = clr.chromsizes[chr1]    
     CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
     start = 0
-    end = CHUNK_SIZE*res #CHUNK_SIZE*res
+    end = min(CHRM_SIZE, CHUNK_SIZE*res) #CHUNK_SIZE*res
     result = []
 
 	
@@ -508,7 +509,6 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res):
         x = x[dist_f]
         y = y[dist_f]
         val = val[dist_f]
-
     return np.array(x),np.array(y),np.array(val)
 
 
@@ -541,50 +541,69 @@ def get_diags(map):
 
 def normalize_sparse(x, y, v, resolution, distance_in_px):
     n = max(max(x),max(y)) + 1
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', category=RuntimeWarning)
-        distances = np.abs(y-x)
-        filter_size = int(2000000 / resolution)
-        for d in range(2 + distance_in_px):
-            indices = distances == d
-            vals = np.zeros(n-d)
-            vals[x[indices]] = v[indices]+0.001
-            if vals.size == 0:
-                continue
-            std = np.std(v[indices])
-            mean = np.mean(v[indices])
-            if math.isnan(mean):
-                mean = 0
-            if math.isnan(std):
-                std = 1
 
-            kernel = np.ones(filter_size)
-            counts = np.convolve(vals != 0, kernel, mode='same')
+    #distance_in_px = min(distance_in_px, n)
+    distances = np.abs(y-x)
+    if n > 2500000/resolution: 
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=RuntimeWarning)
+            filter_size = int(2000000 / resolution)
+            for d in range(2 + distance_in_px):
+                indices = distances == d
+                vals = np.zeros(n-d)
+                vals[x[indices]] = v[indices]+0.001
+                if vals.size == 0:
+                    continue
+                std = np.std(v[indices])
+                mean = np.mean(v[indices])
+                if math.isnan(mean):
+                    mean = 0
+                if math.isnan(std):
+                    std = 1
 
-            s = np.convolve(vals, kernel, mode='same')
-            s2 = np.convolve(vals ** 2, kernel, mode='same')
-            local_var = (s2 - s ** 2 / counts) / (counts - 1)
+                kernel = np.ones(filter_size)
+                counts = np.convolve(vals != 0, kernel, mode='same')
 
-            std2 = std ** 2
-            np.nan_to_num(local_var, copy=False,
+                s = np.convolve(vals, kernel, mode='same')
+                s2 = np.convolve(vals ** 2, kernel, mode='same')
+                local_var = (s2 - s ** 2 / counts) / (counts - 1)
+
+                std2 = std ** 2
+                np.nan_to_num(local_var, copy=False,
                           neginf=std2, posinf=std2, nan=std2)
 
-            local_mean = s / counts
-            local_mean[counts < 30] = mean
-            local_var[counts < 30] = std2
+                local_mean = s / counts
+                local_mean[counts < 30] = mean
+                local_var[counts < 30] = std2
 			
-            np.nan_to_num(local_mean, copy=False,
+                np.nan_to_num(local_mean, copy=False,
                           neginf=mean, posinf=mean, nan=mean)
 
-            local_std = np.sqrt(local_var)
-            vals[x[indices]] -= local_mean[x[indices]]
-            vals[x[indices]] /= local_std[x[indices]]
-            np.nan_to_num(vals, copy=False, nan=0, posinf=0, neginf=0)
-            vals = vals*(1 + math.log(1+mean, 30))
+                local_std = np.sqrt(local_var)
+                vals[x[indices]] -= local_mean[x[indices]]
+                vals[x[indices]] /= local_std[x[indices]]
+                np.nan_to_num(vals, copy=False, nan=0, posinf=0, neginf=0)
+                vals = vals*(1 + math.log(1+mean, 30))
             
-            v[indices] = vals[x[indices]]
+                v[indices] = vals[x[indices]]
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=RuntimeWarning)
+            np.nan_to_num(v, copy=False, neginf=0, posinf=0, nan=0)
+            distance_in_px = min(distance_in_px, n)
+            for d in range(distance_in_px):
+                indices = distances == d                                    
+                std = np.std(v[indices])
+                mean = np.mean(v[indices])
+                if math.isnan(mean):
+                    mean = 0
+                if math.isnan(std):
+                    std = 1
+            #print(std)
+                v[indices] = (v[indices] - mean)/std
+                np.nan_to_num(v, copy=False, nan=0, posinf=0, neginf=0) 
 			
-def inter_normalize_map(vals):
+def inter_nrmalize_map(vals):
     m = np.mean(vals)
     s = np.std(vals)
     cmap -= m
@@ -853,7 +872,7 @@ def main():
         f = args.mat
 
     if not os.path.exists(f):
-        print("Error: Couldn't find specified contact files")
+        print("Error: Couldn't find the specified contact files")
         return
     res = parseBP(args.resolution)
     if not res:
