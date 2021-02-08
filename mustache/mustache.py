@@ -446,8 +446,8 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res):
     :param res: Resolution to extract information from
     :return: Numpy matrix of contact counts
     """
-    uri = '%s::/resolutions/%s' % (f, res)
-    #uri = '%s::/7' % (f)
+    #uri = '%s::/resolutions/%s' % (f, res)
+    uri = '%s::/7' % (f)
     clr = cooler.Cooler(uri)
     if chr1 not in clr.chromnames or chr2 not in clr.chromnames:
         raise NameError('wrong chromosome name!')
@@ -544,7 +544,7 @@ def normalize_sparse(x, y, v, resolution, distance_in_px):
 
     #distance_in_px = min(distance_in_px, n)
     distances = np.abs(y-x)
-    if n > 2500000/resolution: 
+    if (n-distance_in_px)*resolution  > 2000000: 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', category=RuntimeWarning)
             filter_size = int(2000000 / resolution)
