@@ -147,13 +147,15 @@ def parse_args(args):
         "-ch",
         "--chromosome",
         dest="chromosome",
-        help="REQUIRED: Specify which chromosome to run the program for.",
+        nargs='+',
+        help="REQUIRED: Specify which chromosome to run the program for. Optional for cooler files.",
         default='n',
-        required=True)
+        required=False)
     parser.add_argument(
         "-ch2",
         "--chromosome2",
         dest="chromosome2",
+        nargs='+',
         help="Optional: Specify the second chromosome for interchromosomal analysis.",
         default='n',
         required=False)
@@ -878,6 +880,22 @@ def main():
     if not res:
         print("Error: Invalid resolution")
         return
+    CHR_LIST_FLAG = False
+    CHR_COOL_FLAG = False
+    if not args.chromosome or args.chromosome == 'n':
+        if f.endswith(".cool") or f.endswith(".mcool"):
+            CHR_COOL_FLAG = True           
+        elif len(args.chromosome>1):
+            print("Error: For this data type you should enter only one chromosome name.")
+            return 
+        else:
+            print("Error: Please enter the chromosome name.")
+            return
+    elif len(args.chromosome) > 1:
+        CHR_LIST_FLAG = True
+        
+    
+
 
     distFilter = parseBP(args.distFilter)#change
     if not distFilter: 
@@ -900,49 +918,79 @@ def main():
         distFilter = 2000000
         print("The distance limit is set to 2Mbp")
 
+    if CHR_COOL_FLAG:
+        # extract all the chromosome names big enough to run mustache on
+        chr_list = []
+        if f.endswith(".cool"):
+            clr = cooler.Cooler(f)
+        else: #mcooler
+            uri = '%s::/resolutions/%s' % (f, res)
+            clr = cooler.Cooler(uri)
+        for i, chrm in enumerate(clr.chromnames):
+            if clr.chromsizes[i]>1000000:
+                chr_list.append(chrm)
+    else:
+        chr_list = args.chromosome.copy()
+
+    if (args.chromosome2 and args.chromosome2 != 'n') and (len(chr_list) != len(args.chromosome2)):
+        print("Error: the same number of chromosome1 and chromosome2 should be provided.")
+        return
+    elif type(args.chromosome2)==list:
+        chr_list2 = args.chromosome2.copy()
+    else:
+        chr_list2 = chr_list.copy()
+
+    chrSize_in_bp = False
     if args.chrSize_file:
         csz_file = args.chrSize_file
         csz = pd.read_csv(csz_file,header=None,sep='\t')
         chrSize_in_bp = {}
         for i in range(csz.shape[0]):
-            chrSize_in_bp["chr"+str(csz.iloc[i,0]).replace('chr','')] = csz.iloc[i,1]   
-        CHRM_SIZE = chrSize_in_bp["chr"+str(args.chromosome).replace('chr','')]
+            chrSize_in_bp["chr"+str(csz.iloc[i,0]).replace('chr','')] = csz.iloc[i,1]
     else:
         CHRM_SIZE = False
-    
-    
-    biasf = False
-    if args.biasfile:
-        if os.path.exists(args.biasfile):
-            biasf = args.biasfile
+
+    for i, (chromosome,chromosome2) in enumerate(zip(chr_list,chr_list2)):
+        if chrSize_in_bp:
+            CHRM_SIZE = chrSize_in_bp["chr"+str(chromosome).replace('chr','')]
+        biasf = False
+        if args.biasfile:
+            if os.path.exists(args.biasfile):
+                biasf = args.biasfile
+            else:
+                print("Error: Couldn't find specified bias file")
+                return
+        o = regulator(f, args.norm_method, CHRM_SIZE, args.outdir,
+						  bed=args.bed,
+						  res=res,
+						  sigma0=args.s_z,
+						  s=args.s,
+						  verbose=args.verbose,
+						  pt=args.pt,
+						  st=args.st,
+						  distance_filter=distFilter,
+						  nprocesses=args.nprocesses,
+						  bias=biasf,
+						  chromosome=chromosome,
+						  chromosome2=chromosome2,
+						  octaves=args.octaves)
+
+        if i==0:
+            print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
+            with open(args.outdir, 'w') as out_file:
+                out_file.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
+                for significant in o:
+                    out_file.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
+		                   str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
+				   '\t' + str(significant[3]) + '\n')
         else:
-            print("Error: Couldn't find specified bias file")
-            return
-    if not args.chromosome2 or args.chromosome2 == 'n':
-        args.chromosome2 = args.chromosome
-    o = regulator(f, args.norm_method, CHRM_SIZE, args.outdir,
-                  bed=args.bed,
-                  res=res,
-                  sigma0=args.s_z,
-                  s=args.s,
-                  verbose=args.verbose,
-				  pt=args.pt,
-                  st=args.st,
-                  distance_filter=distFilter,
-                  nprocesses=args.nprocesses,
-                  bias=biasf,
-                  chromosome=args.chromosome,
-				  chromosome2=args.chromosome2,
-                  octaves=args.octaves)
-    
-    print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),args.chromosome,args.pt,"%.2f" % (time.time()-start_time)))
-    with open(args.outdir, 'w') as out_file:
-        out_file.write(
-            "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
-        for significant in o:
- #           if float(significant[2]) < args.pt:
-            out_file.write(
-                str(args.chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' + str(args.chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) + '\t' + str(significant[3]) + '\n')
+            print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-old_time)))
+            with open(args.outdir, 'a') as out_file:
+                for significant in o:
+                    out_file.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
+		                   str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
+			           '\t' + str(significant[3]) + '\n')
+        old_time = time.time()
 
 
 if __name__ == '__main__':
