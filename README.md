@@ -98,7 +98,7 @@ where -f is the raw contact map, -b is the bias (normalization vector) file, -ch
 - Acquire the .hic format file for HFFc6 Micro-C from <a href="https://data.4dnucleome.org/files-processed/4DNFIPC7P27B/">4D Nucleome Data Portal</a>. Run Mustache as follows.
 
 ```bash
-mustache -f ./4DNFIPC7P27B.hic -ch 1 -r 1kb -pt 0.01 -o hic_out.tsv
+mustache -f ./4DNFIPC7P27B.hic -ch 1 2 X -r 1kb -pt 0.01 -o hic_out.tsv
 ```
 
 where -f is our input file, -ch is the subject chromosome, -r is the resolution, and -o is the output file.
@@ -107,10 +107,12 @@ where -f is our input file, -ch is the subject chromosome, -r is the resolution,
 
 ```bash
 wget ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.5kb.cool
-mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -ch chr12 -r 5kb -pt 0.05 -o cooler_out.tsv
+mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -ch chr12 chr19 -r 5kb -pt 0.05 -o cooler_out.tsv
+OR
+mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -r 5kb -pt 0.05 -o cooler_out.tsv
 ```
 
-where -f is our input file, -ch is the subject chromosome, -r is the resolution, and -o is the output file.
+where -f is our input file, -ch is the subject chromosome, -r is the resolution, and -o is the output file. If you don't specify the chromosome (-ch) on a .[m]cool file mustache will run on all of the chromosomes and outputs the results in the output file specified by -o.
 
 ## Parameters
 
@@ -120,6 +122,7 @@ where -f is our input file, -ch is the subject chromosome, -r is the resolution,
 | **-f**                | **--file**              | Location of contact map. (See below for format.)                                                                            |
 | **-r**                | **--resolution**        | Resolution of the provided contact map.                                                                                     |
 | **-o**                | **--outfile**           | Name of the output file.                                                                                                    |
+| **-ch**                | **--chromosome**            | List of the chromosome names you want to run mustache on. It's optional for .[m]cool format.                                            |
 | _Optional Parameters_ |                         |                                                                                                                             |
 | **-b**                | **--biases**            | Location of biases (normalization) file for contact map (See below for format).                                             |
 | **-p**                | **--processes**         | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage.                     |
