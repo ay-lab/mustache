@@ -112,7 +112,7 @@ OR
 mustache -f ./Rao2014-GM12878-MboI-allreps-filtered.5kb.cool -r 5kb -pt 0.05 -o cooler_out.tsv
 ```
 
-where -f is our input file, -ch is the subject chromosome, -r is the resolution, and -o is the output file. If you don't specify the chromosome (-ch) on a .[m]cool file mustache will run on all of the chromosomes and outputs the results in the output file specified by -o.
+where -f is our input file, -ch is the subject chromosome, -r is the resolution, and -o is the output file. If you don't specify the chromosome (-ch) for a .[m]cool file mustache will run on all chromosomes and outputs the results in the output file specified by -o.
 
 ## Parameters
 
