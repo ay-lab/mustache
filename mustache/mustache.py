@@ -180,11 +180,11 @@ def kth_diag_indices(a, k):
 
 
 def is_chr(s, c):
-    if 'X' == c:
-        return 'X' in c
-    if 'Y' == c:
-        return 'Y' in c
-    return str(c) in re.findall("[1-9][0-9]*", str(s))
+    #if 'X' == c or 'chrX':
+    #    return 'X' in c
+    #if 'Y' == c:
+    #    return 'Y' in c
+    return str(c).replace('chr','') == str(s).replace('chr','')#re.findall("[1-9][0-9]*", str(s))
 
 
 def get_sep(f):
@@ -247,8 +247,11 @@ def read_pd(f, distance_in_bp, bias, chromosome, res):
     sep = get_sep(f)
     df = pd.read_csv(f, sep=sep, header=None)
     df.dropna(inplace=True)
-    if df.shape[1]==5:
+    if df.shape[1]==5:       
         df = df[np.vectorize(is_chr)(df[0], chromosome)]
+        if df.shape[0] == 0:
+            print('Could\'t read any interaction for this chromosome!')
+            return 
         df = df[np.vectorize(is_chr)(df[2], chromosome)]
         df = df.loc[np.abs(df[1]-df[3]) <= ((distance_in_bp/res+1) * res), :]
         df[1] //= res
