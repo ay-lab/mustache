@@ -124,14 +124,12 @@ where -f is our input file, -ch is the subject chromosome, -r is the resolution,
 | **-o**                | **--outfile**           | Name of the output file.                                                                                                    |
 | **-ch**                | **--chromosome**            | List of the chromosome names you want to run mustache on. It's optional for .[m]cool format.                                            |
 | _Optional Parameters_ |                         |                                                                                                                             |
-| **-b**                | **--biases**            | Location of biases (normalization) file for contact map (See below for format).                                             |
+| **-b**                | **--biases**            | Location of biases (normalization) file for contact map (required only for text format).                                             |
 | **-p**                | **--processes**         | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage.                     |
 | **-pt**               | **--pThreshold**        | P-Value threshold for an interaction to be reported in the final output file. Default is 0.1                                |
 | **-sz**               | **--sigmaZero**         | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                                         |
 | **-st**               | **--sparsityThreshold** | Mustache filters out contacts in sparse areas which you can relax for sparse datasets (e.g., -st 0.8). Default value is 0.88. |
-| **-oc**               | **--octaves**           | Octaves parameter for Mustache. Default is 2.                                                                               |
 | **-cz**               | **--chromosomeSize**           | Path to the chr size file. This will make reading faster especially for higher resolutions or larger chromosomes.                                                                               |
-| **-i**                | **--iterations**        | Iteration count parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                                |
 | **-V**                | **--version**           | Shows the version of the tool.                                                                                              |
 #### Tips
 - For sparser datasets use smaller sparsity thresholds , e.g., -st 0.7 (default=0.88).
@@ -188,10 +186,4 @@ If you use Mustache in your work, please cite our <a href="https://genomebiology
 
 ## Contact
 
-For problems about installation and technical questions please email:
-
-Halil Tuvan Gezer (tgezer@sabanciuniv.edu)
-
-For general questions about the tool, parameter settings, interpretation of the results and other help please email:
-
-Abbas Roayaei Ardakany (abbas@lji.org), Stefano Lonardi (stelo@cs.ucr.edu) and Ferhat Ay (ferhatay@lji.org)
+For problems about installation, technical questions, parameter settings, interpretation of the results and other help please email Abbas Roayaei Ardakany or Ferhat Ay (abbas@lji.org, ferhatay@lji.org).
