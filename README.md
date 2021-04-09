@@ -1,4 +1,4 @@
-# Mustache <img src="images/mustache.png" width="100"> [![PyPI Latest Release](https://img.shields.io/badge/PYPI-v1.0.8-blue)](https://pypi.org/project/mustache-hic/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4046958.svg)](https://doi.org/10.5281/zenodo.4046958)
+# Mustache <img src="images/mustache.png" width="100"> [![PyPI Latest Release](https://img.shields.io/badge/PYPI-v1.0.9-blue)](https://pypi.org/project/mustache-hic/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4046958.svg)](https://doi.org/10.5281/zenodo.4046958)
 
 
 Mustache (Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi and Ferhat Ay (ferhatay@lji.org).
