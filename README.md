@@ -129,7 +129,7 @@ where -f is our input file, -ch is the subject chromosome, -r is the resolution,
 | **-pt**               | **--pThreshold**        | P-Value threshold for an interaction to be reported in the final output file. Default is 0.1                                |
 | **-sz**               | **--sigmaZero**         | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                                         |
 | **-st**               | **--sparsityThreshold** | The sparsity threshold mustache uses tp filter out loops in sparse regions. Default value is 0.88. |
-| **-nb**               | **--no-balance**         | For cooler files, set this parameter if was data was normalized prior to creating the .cool file.                                         |
+| **-nb**               | **--no-balance**         | For cooler files, set this parameter if your data was normalized prior to creating the .cool file.                                         |
 | **-V**                | **--version**           | Shows the version of the tool.                                                                                              |
 #### Tips
 - For sparser datasets use smaller sparsity thresholds , e.g., -st 0.7 (default=0.88).
