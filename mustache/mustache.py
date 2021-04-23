@@ -6,6 +6,7 @@ import re
 import math
 import warnings
 import time
+import struct
 from collections import defaultdict
 
 import pandas as pd
@@ -99,6 +100,13 @@ def parse_args(args):
         dest="norm_method",
         help="RECOMMENDED: Hi-C  normalization method (KR, VC,...).",
         required=False)
+    parser.add_argument("-nb",
+                        '--no-balance',
+                         dest='cooler_do_balance',
+                         action='store_false',
+                         required=False,
+                         help="OPTIONAL: The cooler data was normalized prior to creating the .cool file.")
+    parser.set_defaults(cooler_do_balance=True)
     parser.add_argument(
         "-st",
         "--sparsityThreshold",
@@ -185,6 +193,75 @@ def is_chr(s, c):
     #if 'Y' == c:
     #    return 'Y' in c
     return str(c).replace('chr','') == str(s).replace('chr','')#re.findall("[1-9][0-9]*", str(s))
+
+def readcstr(f):
+    #*    Title: hic2cool
+    #*    Author: Carl Vitzthum
+    #*    Date: 2021
+    #*    Code version: 0.8.3
+    #*    Availability: https://github.com/4dn-dcic/hic2cool/blob/master/hic2cool/hic2cool_utils.py
+
+    # buf = bytearray()
+    buf = b""
+    while True:
+        b = f.read(1)
+        if b is None or b == b"\0":
+            # return buf.encode("utf-8", errors="ignore")
+            return buf.decode("utf-8")
+        elif b == "":
+            raise EOFError("Buffer unexpectedly empty while trying to read null-terminated string")
+        else:
+            buf += b
+
+def read_header(req):
+    #*    Title: hic2cool
+    #*    Author: Carl Vitzthum
+    #*    Date: 2021
+    #*    Code version: 0.8.3
+    #*    Availability: https://github.com/4dn-dcic/hic2cool/blob/master/hic2cool/hic2cool_utils.py
+    """
+    Takes in a .hic file and returns a dictionary containing information about
+    the chromosome. Keys are chromosome index numbers (0 through # of chroms
+    contained in file) and values are [chr idx (int), chr name (str), chrom
+    length (str)]. Returns the masterindex used by the file as well as the open
+    file object.
+    """
+    chrs = {}
+    resolutions = []
+    magic_string = struct.unpack(b'<3s', req.read(3))[0]
+    req.read(1)
+    if (magic_string != b"HIC"):
+        error_string = ('... This does not appear to be a HiC file; '
+                       'magic string is incorrect')
+        force_exit(error_string, req)
+    global version
+    version = struct.unpack(b'<i', req.read(4))[0]
+    masterindex = struct.unpack(b'<q', req.read(8))[0]
+    genome = b""
+    c = req.read(1)
+    while (c != b'\0'):
+        genome += c
+        c = req.read(1)
+    genome = genome.decode('ascii')
+    # metadata extraction
+    metadata = {}
+    nattributes = struct.unpack(b'<i', req.read(4))[0]
+    for x in range(nattributes):
+        key = readcstr(req)
+        value = readcstr(req)
+        metadata[key] = value
+    nChrs = struct.unpack(b'<i', req.read(4))[0]
+    for i in range(0, nChrs):
+        name = readcstr(req)
+        length = struct.unpack(b'<i', req.read(4))[0]
+        if name and length:
+            chrs[i] = [i, name, length]
+    nBpRes = struct.unpack(b'<i', req.read(4))[0]
+    # find bp delimited resolutions supported by the hic file
+    for x in range(0, nBpRes):
+        res = struct.unpack(b'<i', req.read(4))[0]
+        resolutions.append(res)
+    return chrs, resolutions, masterindex, genome, metadata
 
 
 def get_sep(f):
@@ -297,67 +374,74 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     :return: Numpy matrix of contact counts
     """
     if not CHRM_SIZE:
-        if norm_method:
-            result = straw.straw(str(norm_method), f, str(chr1), str(chr2), 'BP', res)
-        else:
-            try:
-                result = straw.straw('KR', f, str(chr1), str(chr2), 'BP', res)  
-            except:
-                result = straw.straw('VC', f, str(chr1), str(chr2), 'BP', res)
-    else:
+        hic = open(f, 'rb')
+        chrs, resolutions, masterindex, genome, metadata = read_header(hic)
+        #chr_list = [chrs[i][1] for i in range(1,len(chrs))]         
+        chrSize_in_bp = {}
+        for i in range(1,len(chrs)):
+            chrSize_in_bp["chr"+chrs[i][1].replace("chr",'')] = chrs[i][2]
+        CHRM_SIZE = chrSize_in_bp["chr"+chr1.replace("chr",'')]
 
-        CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
-        start = 0
-        end = min(CHRM_SIZE, CHUNK_SIZE*res) #CHUNK_SIZE*res
-        result = []
-        try: 
-            while start < CHRM_SIZE:
-                if norm_method:
-                    temp = straw.straw(str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
-                else:
-                    temp = straw.straw("KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)            
-                if len(temp[0])==0:
-                    start = start + CHUNK_SIZE*res -  distance_in_bp
-                    end = end + CHUNK_SIZE*res - distance_in_bp
-                    continue
-                ########################## approach 0
-                if result == []:
-                    result+= temp                             
-                    prev_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
-                else:
-                    cur_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
-                    to_add_list = list(cur_block - prev_block)
-                    del prev_block
-                    result[0]+=  [x[0] for x in  to_add_list]
-                    result[1]+=  [x[1] for x in  to_add_list]
-                    result[2]+=  [x[2] for x in  to_add_list]
-                    prev_block = cur_block
-                    del cur_block
-                start = start + CHUNK_SIZE*res -  distance_in_bp
-                end = end + CHUNK_SIZE*res - distance_in_bp           
-                print(start,end)
-        except:            
-            while start < CHRM_SIZE:
-                temp = straw.straw("VC", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
-                if len(temp[0])==0:
-                    break
-            ########################## approach 0
-                if result == []:
-                    result+= temp     
-                    prev_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
-                else:
-                    cur_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
-                    to_add_list = list(cur_block - prev_block)
-                    del prev_block
-                    result[0]+=  [x[0] for x in  to_add_list]
-                    result[1]+=  [x[1] for x in  to_add_list]
-                    result[2]+=  [x[2] for x in  to_add_list]
-                    prev_block = cur_block
-                    del cur_block
-            
-                start = start + CHUNK_SIZE*res -  distance_in_bp
-                end = end + CHUNK_SIZE*res - distance_in_bp
     
+    CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
+    start = 0
+    end = min(CHRM_SIZE, CHUNK_SIZE*res) #CHUNK_SIZE*res
+    result = []
+    try: 
+        while start < CHRM_SIZE:
+            print(int(start),int(end))
+            if norm_method:
+                temp = straw.straw(str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+            else:
+                temp = straw.straw("KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)            
+            if len(temp[0])==0:
+                start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+                if end==CHRM_SIZE-1:
+                    break
+                else:
+                    end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
+                continue
+            ########################## approach 0
+            if result == []:
+                result+= temp                             
+                prev_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
+            else:
+                cur_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
+                to_add_list = list(cur_block - prev_block)
+                del prev_block
+                result[0]+=  [x[0] for x in  to_add_list]
+                result[1]+=  [x[1] for x in  to_add_list]
+                result[2]+=  [x[2] for x in  to_add_list]
+                prev_block = cur_block
+                del cur_block
+            start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+            if end==CHRM_SIZE-1:
+                break
+            else:
+                end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
+    except:            
+        while start < CHRM_SIZE:
+            temp = straw.straw("VC", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+            if len(temp[0])==0:
+                break
+        ########################## approach 0
+            if result == []:
+                result+= temp     
+                prev_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
+            else:
+                cur_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
+                to_add_list = list(cur_block - prev_block)
+                del prev_block
+                result[0]+=  [x[0] for x in  to_add_list]
+                result[1]+=  [x[1] for x in  to_add_list]
+                result[2]+=  [x[2] for x in  to_add_list]
+                prev_block = cur_block
+                del cur_block
+            start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+            if end==CHRM_SIZE-1:
+                break
+            else:
+                end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)            
     ###################### approach 0
     x = np.array(result[0]) // res
     y = np.array(result[1]) // res
@@ -372,7 +456,7 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
 
 	
     return x, y, val 
-def read_cooler(f, distance_in_bp, chr1, chr2):
+def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
     """
     :param f: .cool file path
     :param chr: Which chromosome to read the file for
@@ -393,14 +477,20 @@ def read_cooler(f, distance_in_bp, chr1, chr2):
             #normVec = clr.bins()['weight'].fetch(chr1)
             #result = clr.matrix(balance=True,sparse=True).fetch(chr1)#as_pixels=True, join=True
             while start < CHRM_SIZE:
-                temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
+                print(int(start),int(end))
+                if cooler_do_balance:
+                    temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
+                else:
+                    temp = clr.matrix(balance=False,sparse=True).fetch( (chr1, int(start), int(end)))
                 temp = sparse.triu(temp)
                 np.nan_to_num(temp, copy=False, nan=0, posinf=0, neginf=0)
                 start_in_px = int(start/res)
                 if len(temp.row)==0:
-                    start = start + CHUNK_SIZE*res -  distance_in_bp
-                    end = end + CHUNK_SIZE*res - distance_in_bp                    
-                    print(start,end)
+                    start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+                    if end==CHRM_SIZE-1:
+                        break
+                    else:
+                        end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
                     continue
 
                 if result == []:
@@ -415,9 +505,12 @@ def read_cooler(f, distance_in_bp, chr1, chr2):
                     result[2]+=  [x[2] for x in  to_add_list]
                     prev_block = cur_block
                     del cur_block
-                print(start,end)
+
                 start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
-                end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)                
+                if end==CHRM_SIZE-1:
+                    break
+                else:
+                    end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1) 
         #except:
             #raise NameError('Reading from the file failed!')
                 x = np.array(result[0])
@@ -444,7 +537,7 @@ def read_cooler(f, distance_in_bp, chr1, chr2):
     #return np.array(x),np.array(y),np.array(val), res, normVec
     return np.array(x),np.array(y),np.array(val), res
 
-def read_mcooler(f, distance_in_bp, chr1, chr2, res):
+def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_do_balance):
     """
     :param f: .cool file path
     :param chr: Which chromosome to read the file for
@@ -466,16 +559,23 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res):
     if chr1 == chr2:
         try:
             #result = clr.matrix(balance=True,sparse=True).fetch(chr1)#as_pixels=True, join=True
-            while start < CHRM_SIZE:                
-                temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
+            while start < CHRM_SIZE:
+                print(int(start),int(end))               
+                if cooler_do_balance: 
+                    temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
+                else:
+                    print('hi')
+                    temp = clr.matrix(balance=False,sparse=True).fetch( (chr1, int(start), int(end)))
                 temp = sparse.triu(temp)
                 np.nan_to_num(temp, copy=False, nan=0, posinf=0, neginf=0)
                 start_in_px = int(start/res)
                 if len(temp.row)==0:
-                    start = start + CHUNK_SIZE*res -  distance_in_bp
-                    end = end + CHUNK_SIZE*res - distance_in_bp
-                    #print('row=0')
-                    print(start,end)
+                    start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+                    if end==CHRM_SIZE-1:
+                        break
+                    else:
+                        end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
+
                     continue
            
                 if result == []:
@@ -492,9 +592,11 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res):
                     prev_block = cur_block
                     del cur_block
 
-                print(start,end)
                 start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
-                end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)                
+                if end==CHRM_SIZE-1:
+                    break
+                else:
+                    end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
         except:
             raise NameError('Reading from the file failed!')
         x = np.array(result[0])
@@ -761,7 +863,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
     return out
 
 
-def regulator(f, norm_method, CHRM_SIZE, outdir, bed="",
+def regulator(f, norm_method, cooler_do_balance, CHRM_SIZE, outdir, bed="",
               res=5000,
               sigma0=1.6,
               s=10,
@@ -789,12 +891,12 @@ def regulator(f, norm_method, CHRM_SIZE, outdir, bed="",
 
     print("Reading contact map...")
 
-    if f.endswith(".hic"):
+    if f.endswith(".hic"):                       
         x, y, v = read_hic_file(f, norm_method, CHRM_SIZE, distance_in_bp, chromosome,chromosome2, res)
     elif f.endswith(".cool"):
-        x, y, v, res = read_cooler(f, distance_in_bp, chromosome,chromosome2)
+        x, y, v, res = read_cooler(f, distance_in_bp, chromosome,chromosome2, cooler_do_balance)
     elif f.endswith(".mcool"):
-        x, y, v = read_mcooler(f, distance_in_bp, chromosome,chromosome2, res)
+        x, y, v = read_mcooler(f, distance_in_bp, chromosome,chromosome2, res, cooler_do_balance)
     else:
         x, y, v = read_pd(f, distance_in_bp, bias, chromosome, res)
 
@@ -885,9 +987,12 @@ def main():
         return
     CHR_LIST_FLAG = False
     CHR_COOL_FLAG = False
+    CHR_HIC_FLAG  = False
     if not args.chromosome or args.chromosome == 'n':
         if f.endswith(".cool") or f.endswith(".mcool"):
-            CHR_COOL_FLAG = True           
+            CHR_COOL_FLAG = True
+        elif f.endswith(".hic"):
+            CHR_HIC_FLAG = True           
         elif len(args.chromosome>1):
             print("Error: For this data type you should enter only one chromosome name.")
             return 
@@ -921,6 +1026,7 @@ def main():
         distFilter = 2000000
         print("The distance limit is set to 2Mbp")
 
+    chrSize_in_bp = False
     if CHR_COOL_FLAG:
         # extract all the chromosome names big enough to run mustache on
         chr_list = []
@@ -932,8 +1038,15 @@ def main():
         for i, chrm in enumerate(clr.chromnames):
             if clr.chromsizes[i]>1000000:
                 chr_list.append(chrm)
+    elif CHR_HIC_FLAG:
+        hic = open(f, 'rb')
+        chrs, resolutions, masterindex, genome, metadata = read_header(hic)
+        chr_list = [chrs[i][1] for i in range(1,len(chrs))]
+        chrSize_in_bp = {}
+        for i in range(1,len(chrs)):        
+            chrSize_in_bp["chr"+str(chrs[i][1]).replace("chr",'')] = chrs[i][2] 
     else:
-        chr_list = args.chromosome.copy()
+        chr_list = args.chromosome.copy()        
 
     if (args.chromosome2 and args.chromosome2 != 'n') and (len(chr_list) != len(args.chromosome2)):
         print("Error: the same number of chromosome1 and chromosome2 should be provided.")
@@ -943,15 +1056,15 @@ def main():
     else:
         chr_list2 = chr_list.copy()
 
-    chrSize_in_bp = False
-    if args.chrSize_file:
+
+    CHRM_SIZE = False    
+    if args.chrSize_file and (not chrSize_in_bp):
         csz_file = args.chrSize_file
         csz = pd.read_csv(csz_file,header=None,sep='\t')
         chrSize_in_bp = {}
         for i in range(csz.shape[0]):
             chrSize_in_bp["chr"+str(csz.iloc[i,0]).replace('chr','')] = csz.iloc[i,1]
-    else:
-        CHRM_SIZE = False
+           
 
     for i, (chromosome,chromosome2) in enumerate(zip(chr_list,chr_list2)):
         if chrSize_in_bp:
@@ -963,7 +1076,7 @@ def main():
             else:
                 print("Error: Couldn't find specified bias file")
                 return
-        o = regulator(f, args.norm_method, CHRM_SIZE, args.outdir,
+        o = regulator(f, args.norm_method, args.cooler_do_balance, CHRM_SIZE, args.outdir,
 						  bed=args.bed,
 						  res=res,
 						  sigma0=args.s_z,
