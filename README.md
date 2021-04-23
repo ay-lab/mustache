@@ -1,4 +1,4 @@
-# Mustache <img src="images/mustache.png" width="100"> [![PyPI Latest Release](https://img.shields.io/badge/PYPI-v1.0.9-blue)](https://pypi.org/project/mustache-hic/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4046958.svg)](https://doi.org/10.5281/zenodo.4046958)
+# Mustache <img src="images/mustache.png" width="100"> [![PyPI Latest Release](https://img.shields.io/badge/PYPI-v1.1.0-blue)](https://pypi.org/project/mustache-hic/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4046958.svg)](https://doi.org/10.5281/zenodo.4046958)
 
 
 Mustache (Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi and Ferhat Ay (ferhatay@lji.org).
@@ -128,8 +128,8 @@ where -f is our input file, -ch is the subject chromosome, -r is the resolution,
 | **-p**                | **--processes**         | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage.                     |
 | **-pt**               | **--pThreshold**        | P-Value threshold for an interaction to be reported in the final output file. Default is 0.1                                |
 | **-sz**               | **--sigmaZero**         | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                                         |
-| **-st**               | **--sparsityThreshold** | Mustache filters out contacts in sparse areas which you can relax for sparse datasets (e.g., -st 0.8). Default value is 0.88. |
-| **-cz**               | **--chromosomeSize**           | Path to the chr size file. This will make reading faster especially for higher resolutions or larger chromosomes.                                                                               |
+| **-st**               | **--sparsityThreshold** | The sparsity threshold mustache uses tp filter out loops in sparse regions. Default value is 0.88. |
+| **-nb**               | **--no-balance**         | For cooler files, set this parameter if was data was normalized prior to creating the .cool file.                                         |
 | **-V**                | **--version**           | Shows the version of the tool.                                                                                              |
 #### Tips
 - For sparser datasets use smaller sparsity thresholds , e.g., -st 0.7 (default=0.88).
