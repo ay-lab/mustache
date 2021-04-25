@@ -387,6 +387,7 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     start = 0
     end = min(CHRM_SIZE, CHUNK_SIZE*res) #CHUNK_SIZE*res
     result = []
+    val = []
     try: 
         while start < CHRM_SIZE:
             print(int(start),int(end))
@@ -446,7 +447,14 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     x = np.array(result[0]) // res
     y = np.array(result[1]) // res
     val = np.array(result[2])
-    val[np.isnan(val)] = 0
+    
+    if len(val)==0:
+        print(f'There is no contact in chrmosome {chr1} to work on.')
+        return [],[],[],res
+    else:
+        val[np.isnan(val)] = 0
+
+    
 
     if(chr1==chr2):
         dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
@@ -454,8 +462,12 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
         y = y[dist_f]
         val = val[dist_f]
 
+    if len(val>0):
+        return x, y, val
+    else:
+        print(f'There is no contact in chrmosome {chr1} to work on.')
+        return [], [], []
 	
-    return x, y, val 
 def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
     """
     :param f: .cool file path
@@ -464,6 +476,7 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
     """
     clr = cooler.Cooler(f)
     res = clr.binsize
+    print(f'Your cooler data resolution is {res}')
     if chr1 not in clr.chromnames or chr2 not in clr.chromnames:
         raise NameError('wrong chromosome name!')
     CHRM_SIZE = clr.chromsizes[chr1]
@@ -471,6 +484,7 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
     start = 0
     end = min(CHUNK_SIZE*res, CHRM_SIZE) #CHUNK_SIZE*res
     result = []
+    val = []
     ###########################
     if chr1 == chr2:
         #try:
@@ -517,6 +531,7 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
                 y = np.array(result[1])
                 val = np.array(result[2])
     else:
+       
         result = clr.matrix(balance=True,sparse=True).fetch(chr1, chr2)
         result = sparse.triu(result)
         np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
@@ -525,8 +540,11 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
         val = result.data
 
     ##########################
-    
-    val[np.isnan(val)] = 0
+    if len(val)==0:
+        print(f'There is no contact in chrmosome {chr1} to work on.')
+        return [],[],[],res 
+    else:
+        val[np.isnan(val)] = 0
 
     if(chr1==chr2):
         dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
@@ -535,7 +553,11 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
         val = val[dist_f]
     
     #return np.array(x),np.array(y),np.array(val), res, normVec
-    return np.array(x),np.array(y),np.array(val), res
+    if len(val>0):
+        return np.array(x),np.array(y),np.array(val), res
+    else:
+        print(f'There is no contact in chrmosome {chr1} to work on.')
+        return [], [], [], res
 
 def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_do_balance):
     """
@@ -554,7 +576,7 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_do_balance):
     start = 0
     end = min(CHRM_SIZE, CHUNK_SIZE*res) #CHUNK_SIZE*res
     result = []
-
+    val = []
 	
     if chr1 == chr2:
         try:
@@ -564,7 +586,6 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_do_balance):
                 if cooler_do_balance: 
                     temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
                 else:
-                    print('hi')
                     temp = clr.matrix(balance=False,sparse=True).fetch( (chr1, int(start), int(end)))
                 temp = sparse.triu(temp)
                 np.nan_to_num(temp, copy=False, nan=0, posinf=0, neginf=0)
@@ -609,14 +630,24 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_do_balance):
         x = result.row
         y = result.col
         val = result.data
+    
+    if len(val)==0:
+        print(f'There is no contact in chrmosome {chr1} to work on.')
+        return [],[],[]
+    else:
+        val[np.isnan(val)] = 0
 
-    val[np.isnan(val)] = 0
     if(chr1==chr2):
         dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
         x = x[dist_f]
         y = y[dist_f]
         val = val[dist_f]
-    return np.array(x),np.array(y),np.array(val)
+
+    if len(val>0):
+        return np.array(x),np.array(y),np.array(val)
+    else:
+        print(f'There is no contact in chrmosome {chr1} to work on.')
+        return [], [], []    
 
 
 def get_diags(map):
@@ -899,7 +930,9 @@ def regulator(f, norm_method, cooler_do_balance, CHRM_SIZE, outdir, bed="",
         x, y, v = read_mcooler(f, distance_in_bp, chromosome,chromosome2, res, cooler_do_balance)
     else:
         x, y, v = read_pd(f, distance_in_bp, bias, chromosome, res)
-
+   
+    if len(v)==0:
+        return [] 
     print("Normalizing contact map...")
     
     distance_in_px = int(math.ceil(distance_in_bp // res))
@@ -1065,7 +1098,7 @@ def main():
         for i in range(csz.shape[0]):
             chrSize_in_bp["chr"+str(csz.iloc[i,0]).replace('chr','')] = csz.iloc[i,1]
            
-
+    first_chr_to_write = True
     for i, (chromosome,chromosome2) in enumerate(zip(chr_list,chr_list2)):
         if chrSize_in_bp:
             CHRM_SIZE = chrSize_in_bp["chr"+str(chromosome).replace('chr','')]
@@ -1090,8 +1123,10 @@ def main():
 						  chromosome=chromosome,
 						  chromosome2=chromosome2,
 						  octaves=args.octaves)
-
-        if i==0:
+        if o == []:
+            continue
+        if first_chr_to_write:
+            first_chr_to_write = False
             print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
             with open(args.outdir, 'w') as out_file:
                 out_file.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
