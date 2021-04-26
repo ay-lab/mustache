@@ -476,6 +476,7 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
     """
     clr = cooler.Cooler(f)
     res = clr.binsize
+    print(clr.bins()[1000:1200])
     print(f'Your cooler data resolution is {res}')
     if chr1 not in clr.chromnames or chr2 not in clr.chromnames:
         raise NameError('wrong chromosome name!')
@@ -1123,24 +1124,30 @@ def main():
 						  chromosome=chromosome,
 						  chromosome2=chromosome2,
 						  octaves=args.octaves)
-        if o == []:
-            continue
-        if first_chr_to_write:
-            first_chr_to_write = False
-            print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
+        if i==0:      
             with open(args.outdir, 'w') as out_file:
                 out_file.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
-                for significant in o:
-                    out_file.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
-		                   str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
-				   '\t' + str(significant[3]) + '\n')
-        else:
-            print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-old_time)))
-            with open(args.outdir, 'a') as out_file:
-                for significant in o:
-                    out_file.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
-		                   str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
-			           '\t' + str(significant[3]) + '\n')
+        if o == []:
+            print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
+            old_time = time.time()
+            continue
+
+        #if first_chr_to_write:
+        #    first_chr_to_write = False
+        print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
+        with open(args.outdir, 'w') as out_file:
+            #out_file.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
+            for significant in o:
+                out_file.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
+		               str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
+		               '\t' + str(significant[3]) + '\n')
+        #else:
+        #    print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-old_time)))
+        #    with open(args.outdir, 'a') as out_file:
+        #        for significant in o:
+        #            out_file.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
+	#	                   str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
+	#		           '\t' + str(significant[3]) + '\n')
         old_time = time.time()
 
 
