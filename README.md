@@ -1,4 +1,4 @@
-# Mustache <img src="images/mustache.png" width="100"> [![PyPI Latest Release](https://img.shields.io/badge/PYPI-v1.1.1-blue)](https://pypi.org/project/mustache-hic/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4046958.svg)](https://doi.org/10.5281/zenodo.4046958)
+# Mustache <img src="images/mustache.png" width="100"> [![PyPI Latest Release](https://img.shields.io/badge/PYPI-v1.1.2-blue)](https://pypi.org/project/mustache-hic/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4046958.svg)](https://doi.org/10.5281/zenodo.4046958)
 
 
 Mustache (Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi and Ferhat Ay (ferhatay@lji.org).
@@ -122,7 +122,7 @@ where -f is our input file, -ch is the subject chromosome, -r is the resolution,
 | **-f**                | **--file**              | Location of contact map. (See below for format.)                                                                            |
 | **-r**                | **--resolution**        | Resolution of the provided contact map.                                                                                     |
 | **-o**                | **--outfile**           | Name of the output file.                                                                                                    |
-| **-ch**                | **--chromosome**            | List of the chromosome names you want to run mustache on. It's optional for .[m]cool format.                                            |
+| **-ch**                | **--chromosome**            | List of the chromosome names you want to run mustache on. If not specified for .[m]cool or .hic formats mustache will automatically run on all chromosomes.                                            |
 | _Optional Parameters_ |                         |                                                                                                                             |
 | **-b**                | **--biases**            | Location of biases (normalization) file for contact map (required only for text format).                                             |
 | **-p**                | **--processes**         | Number of parallel processes to run. Default is 4. Increasing this will also increase the memory usage.                     |
