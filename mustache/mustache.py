@@ -476,7 +476,6 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
     """
     clr = cooler.Cooler(f)
     res = clr.binsize
-    print(clr.bins()[1000:1200])
     print(f'Your cooler data resolution is {res}')
     if chr1 not in clr.chromnames or chr2 not in clr.chromnames:
         raise NameError('wrong chromosome name!')
