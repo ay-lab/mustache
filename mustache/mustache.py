@@ -96,17 +96,17 @@ def parse_args(args):
     parser.add_argument(
         "-norm",
         "--normalization",
-        default="",
+        default=False,
         dest="norm_method",
         help="RECOMMENDED: Hi-C  normalization method (KR, VC,...).",
         required=False)
-    parser.add_argument("-cb",
-                        '--cooler-balance',
-                         dest='cooler_balance',
-                         default=False,
-                         #action='store_false',
-                         required=False,
-                         help="OPTIONAL: The cooler data was normalized prior to creating the .cool file.")
+    #parser.add_argument("-cb",
+    #                    '--cooler-balance',
+    #                     dest='cooler_balance',
+    #                     default=False,
+    #                     #action='store_false',
+    #                     required=False,
+    #                     help="OPTIONAL: The cooler data was normalized prior to creating the .cool file.")
     #parser.set_defaults(cooler_balance=False)
     parser.add_argument(
         "-st",
@@ -392,10 +392,10 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     try: 
         while start < CHRM_SIZE:
             print(int(start),int(end))
-            if norm_method:
-                temp = straw.straw(str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+            if not norm_method:
+                temp = straw.straw("KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res) 
             else:
-                temp = straw.straw("KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)            
+                temp = straw.straw(str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
             if len(temp[0])==0:
                 start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
                 if end==CHRM_SIZE-1:
@@ -904,7 +904,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
     return out
 
 
-def regulator(f, norm_method, cooler_balance, CHRM_SIZE, outdir, bed="",
+def regulator(f, norm_method, CHRM_SIZE, outdir, bed="",
               res=5000,
               sigma0=1.6,
               s=10,
@@ -935,9 +935,9 @@ def regulator(f, norm_method, cooler_balance, CHRM_SIZE, outdir, bed="",
     if f.endswith(".hic"):                       
         x, y, v = read_hic_file(f, norm_method, CHRM_SIZE, distance_in_bp, chromosome,chromosome2, res)
     elif f.endswith(".cool"):
-        x, y, v, res = read_cooler(f, distance_in_bp, chromosome,chromosome2, cooler_balance)
+        x, y, v, res = read_cooler(f, distance_in_bp, chromosome,chromosome2, norm_method)
     elif f.endswith(".mcool"):
-        x, y, v = read_mcooler(f, distance_in_bp, chromosome,chromosome2, res, cooler_balance)
+        x, y, v = read_mcooler(f, distance_in_bp, chromosome,chromosome2, res, norm_method)
     else:
         x, y, v = read_pd(f, distance_in_bp, bias, chromosome, res)
    
@@ -1119,7 +1119,7 @@ def main():
             else:
                 print("Error: Couldn't find specified bias file")
                 return
-        o = regulator(f, args.norm_method, args.cooler_balance, CHRM_SIZE, args.outdir,
+        o = regulator(f, args.norm_method, CHRM_SIZE, args.outdir,
 						  bed=args.bed,
 						  res=res,
 						  sigma0=args.s_z,
