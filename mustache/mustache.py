@@ -100,13 +100,14 @@ def parse_args(args):
         dest="norm_method",
         help="RECOMMENDED: Hi-C  normalization method (KR, VC,...).",
         required=False)
-    parser.add_argument("-nb",
-                        '--no-balance',
-                         dest='cooler_do_balance',
-                         action='store_false',
+    parser.add_argument("-cb",
+                        '--cooler-balance',
+                         dest='cooler_balance',
+                         default=False,
+                         #action='store_false',
                          required=False,
                          help="OPTIONAL: The cooler data was normalized prior to creating the .cool file.")
-    parser.set_defaults(cooler_do_balance=True)
+    #parser.set_defaults(cooler_balance=False)
     parser.add_argument(
         "-st",
         "--sparsityThreshold",
@@ -468,7 +469,7 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
         print(f'There is no contact in chrmosome {chr1} to work on.')
         return [], [], []
 	
-def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
+def read_cooler(f, distance_in_bp, chr1, chr2, cooler_balance):
     """
     :param f: .cool file path
     :param chr: Which chromosome to read the file for
@@ -492,10 +493,10 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
             #result = clr.matrix(balance=True,sparse=True).fetch(chr1)#as_pixels=True, join=True
             while start < CHRM_SIZE:
                 print(int(start),int(end))
-                if cooler_do_balance:
+                if not cooler_balance:
                     temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
                 else:
-                    temp = clr.matrix(balance=False,sparse=True).fetch( (chr1, int(start), int(end)))
+                    temp = clr.matrix(balance=cooler_balance,sparse=True).fetch( (chr1, int(start), int(end)))
                 temp = sparse.triu(temp)
                 np.nan_to_num(temp, copy=False, nan=0, posinf=0, neginf=0)
                 start_in_px = int(start/res)
@@ -562,7 +563,7 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
         print(f'There is no contact in chrmosome {chr1} to work on.')
         return [], [], [], res
 
-def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_do_balance):
+def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_balance):
     """
     :param f: .cool file path
     :param chr: Which chromosome to read the file for
@@ -572,6 +573,7 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_do_balance):
     uri = '%s::/resolutions/%s' % (f, res)
     #uri = '%s::/7' % (f)
     clr = cooler.Cooler(uri)
+    #print(clr.bins()[:100])
     if chr1 not in clr.chromnames or chr2 not in clr.chromnames:
         raise NameError('wrong chromosome name!')
     CHRM_SIZE = clr.chromsizes[chr1]    
@@ -586,10 +588,10 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_do_balance):
             #result = clr.matrix(balance=True,sparse=True).fetch(chr1)#as_pixels=True, join=True
             while start < CHRM_SIZE:
                 print(int(start),int(end))               
-                if cooler_do_balance: 
+                if not cooler_balance: 
                     temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
                 else:
-                    temp = clr.matrix(balance=False,sparse=True).fetch( (chr1, int(start), int(end)))
+                    temp = clr.matrix(balance='KR',sparse=True).fetch( (chr1, int(start), int(end)))
                 temp = sparse.triu(temp)
                 np.nan_to_num(temp, copy=False, nan=0, posinf=0, neginf=0)
                 start_in_px = int(start/res)
@@ -902,7 +904,7 @@ def mustache(c, chromosome,chromosome2, res, start, end, mask_size, distance_in_
     return out
 
 
-def regulator(f, norm_method, cooler_do_balance, CHRM_SIZE, outdir, bed="",
+def regulator(f, norm_method, cooler_balance, CHRM_SIZE, outdir, bed="",
               res=5000,
               sigma0=1.6,
               s=10,
@@ -933,9 +935,9 @@ def regulator(f, norm_method, cooler_do_balance, CHRM_SIZE, outdir, bed="",
     if f.endswith(".hic"):                       
         x, y, v = read_hic_file(f, norm_method, CHRM_SIZE, distance_in_bp, chromosome,chromosome2, res)
     elif f.endswith(".cool"):
-        x, y, v, res = read_cooler(f, distance_in_bp, chromosome,chromosome2, cooler_do_balance)
+        x, y, v, res = read_cooler(f, distance_in_bp, chromosome,chromosome2, cooler_balance)
     elif f.endswith(".mcool"):
-        x, y, v = read_mcooler(f, distance_in_bp, chromosome,chromosome2, res, cooler_do_balance)
+        x, y, v = read_mcooler(f, distance_in_bp, chromosome,chromosome2, res, cooler_balance)
     else:
         x, y, v = read_pd(f, distance_in_bp, bias, chromosome, res)
    
@@ -1117,7 +1119,7 @@ def main():
             else:
                 print("Error: Couldn't find specified bias file")
                 return
-        o = regulator(f, args.norm_method, args.cooler_do_balance, CHRM_SIZE, args.outdir,
+        o = regulator(f, args.norm_method, args.cooler_balance, CHRM_SIZE, args.outdir,
 						  bed=args.bed,
 						  res=res,
 						  sigma0=args.s_z,
