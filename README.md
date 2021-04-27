@@ -1,4 +1,4 @@
-# Mustache <img src="images/mustache.png" width="100"> [![PyPI Latest Release](https://img.shields.io/badge/PYPI-v1.1.4-blue)](https://pypi.org/project/mustache-hic/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4046958.svg)](https://doi.org/10.5281/zenodo.4046958)
+# Mustache <img src="images/mustache.png" width="100"> [![PyPI Latest Release](https://img.shields.io/badge/PYPI-v1.1.5-blue)](https://pypi.org/project/mustache-hic/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4046958.svg)](https://doi.org/10.5281/zenodo.4046958)
 
 
 Mustache (Multi-scale Detection of Chromatin Loops from Hi-C and Micro-C Maps using Scale-Space Representation) is a tool by Abbas Roayaei Ardakany, Halil Tuvan Gezer, Stefano Lonardi and Ferhat Ay (ferhatay@lji.org).
@@ -129,7 +129,7 @@ where -f is our input file, -ch is the subject chromosome, -r is the resolution,
 | **-pt**               | **--pThreshold**        | P-Value threshold for an interaction to be reported in the final output file. Default is 0.1                                |
 | **-sz**               | **--sigmaZero**         | Sigma0 parameter for Mustache. Default is experimentally chosen for 5Kb resolution.                                         |
 | **-st**               | **--sparsityThreshold** | The sparsity threshold mustache uses tp filter out loops in sparse regions. Default value is 0.88. |
-| **-cb**               | **--cooler-balance**         | For cooler files, you can specify what normalization mustache should use (-cb KR). By default, mustache assumes that bias values are stored in the 'weight' column when this parameter is not specified.|
+| **-norm**               | **--normalization**         | For .[m]cool or .hic files, you can specify what normalization mustache should use (-norm KR). For .[m]cool files, by default, mustache assumes that bias values are stored in the 'weight' column when this parameter is not specified. For .hic format, the default is 'KR' normalization if not specified.|
 | **-V**                | **--version**           | Shows the version of the tool.                                                                                              |
 #### Tips
 - For sparser datasets use smaller sparsity thresholds , e.g., -st 0.7 (default=0.88).
