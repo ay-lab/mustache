@@ -527,9 +527,13 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
                     end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1) 
         #except:
             #raise NameError('Reading from the file failed!')
-                x = np.array(result[0])
-                y = np.array(result[1])
-                val = np.array(result[2])
+            if len(result)==0:
+                print(f'There is no contact in chrmosome {chr1} to work on.')
+                return [],[],[],res
+
+            x = np.array(result[0])
+            y = np.array(result[1])
+            val = np.array(result[2])
     else:
        
         result = clr.matrix(balance=True,sparse=True).fetch(chr1, chr2)
@@ -538,20 +542,19 @@ def read_cooler(f, distance_in_bp, chr1, chr2, cooler_do_balance):
         x = result.row
         y = result.col
         val = result.data
-
+    
     ##########################
     if len(val)==0:
         print(f'There is no contact in chrmosome {chr1} to work on.')
         return [],[],[],res 
     else:
         val[np.isnan(val)] = 0
-
+ 
     if(chr1==chr2):
         dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
         x = x[dist_f]
         y = y[dist_f]
         val = val[dist_f]
-    
     #return np.array(x),np.array(y),np.array(val), res, normVec
     if len(val>0):
         return np.array(x),np.array(y),np.array(val), res
@@ -620,6 +623,11 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_do_balance):
                     end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
         except:
             raise NameError('Reading from the file failed!')
+        
+        if len(result)==0:
+            print(f'There is no contact in chrmosome {chr1} to work on.')
+            return [],[],[]
+
         x = np.array(result[0])
         y = np.array(result[1])
         val = np.array(result[2])
