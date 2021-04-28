@@ -1144,7 +1144,7 @@ def main():
         #if first_chr_to_write:
         #    first_chr_to_write = False
         print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
-        with open(args.outdir, 'w') as out_file:
+        with open(args.outdir, 'a') as out_file:
             #out_file.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
             for significant in o:
                 out_file.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
