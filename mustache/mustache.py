@@ -591,7 +591,7 @@ def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_balance):
                 if not cooler_balance: 
                     temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
                 else:
-                    temp = clr.matrix(balance='KR',sparse=True).fetch( (chr1, int(start), int(end)))
+                    temp = clr.matrix(balance=cooler_balance,sparse=True).fetch( (chr1, int(start), int(end)))
                 temp = sparse.triu(temp)
                 np.nan_to_num(temp, copy=False, nan=0, posinf=0, neginf=0)
                 start_in_px = int(start/res)
