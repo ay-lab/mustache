@@ -1004,7 +1004,6 @@ def diff_mustache(c1, c2, chromosome,chromosome2, res, start, end, mask_size, di
     #x2 = x2[:sig_count]
     #y2 = y2[:sig_count]
     xyScales2 = so2[x2, y2]
-    print('salam',len(x2))
     nonsparse = x1 != 0
     
     for i in range(len(xyScales1)):
@@ -1398,26 +1397,33 @@ def main():
 
         #if first_chr_to_write:
         #    first_chr_to_write = False
-        print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
+        #print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
+        counter1 = counter2 = counter3 = counter4 = 0
         with open(args.outdir+'.loop1', 'a') as out_file1, open(args.outdir+'.diffloop1', 'a') as out_file2, open(args.outdir+'.loop2', 'a') as out_file3, open(args.outdir+'.diffloop2', 'a') as out_file4:
             #out_file.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
             for significant in o:
                 if significant[4]==1:
+                    counter1+=1
                     out_file1.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
 		               str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
 		               '\t' + str(significant[3]) + '\n')
                 elif significant[4]==2:
+                    counter2+=1
                     out_file2.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
                                str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
                                '\t' + str(significant[3]) + '\n')
                 elif significant[4]==3:
+                    counter3+=1
                     out_file3.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
                                str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
                                '\t' + str(significant[3]) + '\n')
                 elif significant[4]==4:
+                    counter4+=1
                     out_file4.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
                                str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
                                '\t' + str(significant[3]) + '\n')
+
+        print(f"({counter1},{counter3}) loops and ({counter2},{counter4}) differential-loops found in chrmosome={chromosome} for detection-fdr<{args.pt} and difference-fdr<{args.pt2} in {time.time()-start_time:.2f}sec")
         #else:
         #    print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-old_time)))
         #    with open(args.outdir, 'a') as out_file:
