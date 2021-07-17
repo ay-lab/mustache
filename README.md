@@ -19,7 +19,10 @@ We added differential loop detection to mustache. You can find the differential 
 python3 ./mustache/mustache/diff_mustache.py -f1 data1.hic -f2 data2.hic -pt 0.05 -pt2 0.1 -o output -r 10000 -st 0.8
 ```
 where "pt2" specifies the fdr threshold for finding differential loops. This command will output 4 different files:
-
+1. output.loop1: loops found in data1.hic
+2. output.loop2: loops found in data2.hic
+3. output.diffloop1: loops that are present in data1.hic and weakened/disappeared in data2.hic
+4. output.diffloop2: loops that are present in data2.hic and weakened/disappeared in data1.hic
 ## Installation
 
 For convenience, we provide several ways to install Mustache.
