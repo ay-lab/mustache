@@ -14,7 +14,7 @@ import numpy as np
 import straw
 import cooler
 
-from scipy.stats import expon
+from scipy.stats import expon, norm
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage.filters import maximum_filter
 from scipy.signal import convolve2d
@@ -53,11 +53,17 @@ def parseBP(s):
 def parse_args(args):
     parser = argparse.ArgumentParser(description="Check the help flag")
 
-    parser.add_argument("-f",
-                        "--file",
-                        dest="f_path",
+    parser.add_argument("-f1",
+                        "--file1",
+                        dest="f_path1",
                         help="REQUIRED: Contact map",
                         required=False)
+    parser.add_argument("-f2",
+                        "--file2",
+                        dest="f_path2",
+                        help="REQUIRED: Contact map",
+                        required=False)
+
     parser.add_argument("-d",
                         "--distance",
                         dest="distFilter",
@@ -74,15 +80,27 @@ def parse_args(args):
                         dest="resolution",
                         help="REQUIRED: Resolution used for the contact maps",
                         required=True)
-    parser.add_argument("-bed", "--bed", dest="bed",
+    parser.add_argument("-bed1", "--bed1", dest="bed1",
                         help="BED file for HiC-Pro type input",
                         default="",
                         required=False)
-    parser.add_argument("-m", "--matrix", dest="mat",
+    parser.add_argument("-m1", "--matrix1", dest="mat1",
                         help="MATRIX file for HiC-Pro type input",
                         default="",
                         required=False)
-    parser.add_argument("-b", "--biases", dest="biasfile",
+    parser.add_argument("-b1", "--biases1", dest="biasfile1",
+                        help="RECOMMENDED: biases calculated by\
+                        ICE or KR norm for each locus for contact map are read from BIASFILE",
+                        required=False)
+    parser.add_argument("-bed2", "--bed2", dest="bed2",
+                        help="BED file for HiC-Pro type input",
+                        default="",
+                        required=False)
+    parser.add_argument("-m2", "--matrix2", dest="mat2",
+                        help="MATRIX file for HiC-Pro type input",
+                        default="",
+                        required=False)
+    parser.add_argument("-b2", "--biases2", dest="biasfile2",
                         help="RECOMMENDED: biases calculated by\
                         ICE or KR norm for each locus for contact map are read from BIASFILE",
                         required=False)
@@ -123,6 +141,14 @@ def parse_args(args):
         type=float,
         default=0.2,
         help="OPTIONAL: P-value threshold for the results in the final output. Default is 0.2",
+        required=False)
+    parser.add_argument(
+        "-pt2",
+        "--pThreshold2",
+        dest="pt2",
+        type=float,
+        default=0.1,
+        help="OPTIONAL: P-value threshold for the results in the final output. Default is 0.1",
         required=False)
     parser.add_argument(
         "-sz",
@@ -691,12 +717,11 @@ def normalize_sparse(x, y, v, resolution, distance_in_px):
     n = max(max(x),max(y)) + 1
 
     #distance_in_px = min(distance_in_px, n)
-    pval_weights = []
     distances = np.abs(y-x)
     if (n-distance_in_px)*resolution  > 2000000: 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', category=RuntimeWarning)
-            filter_size = int(2000000 / resolution)             
+            filter_size = int(2000000 / resolution)
             for d in range(2 + distance_in_px):
                 indices = distances == d
                 vals = np.zeros(n-d)
@@ -733,7 +758,7 @@ def normalize_sparse(x, y, v, resolution, distance_in_px):
                 vals[x[indices]] /= local_std[x[indices]]
                 np.nan_to_num(vals, copy=False, nan=0, posinf=0, neginf=0)
                 vals = vals*(1 + math.log(1+mean, 30))
-                pval_weights += [1 + math.log(1+mean, 30)]
+            
                 v[indices] = vals[x[indices]]
     else:
         with warnings.catch_warnings():
@@ -751,7 +776,6 @@ def normalize_sparse(x, y, v, resolution, distance_in_px):
             #print(std)
                 v[indices] = (v[indices] - mean)/std
                 np.nan_to_num(v, copy=False, nan=0, posinf=0, neginf=0) 
-    return pval_weights
 			
 def inter_nrmalize_map(vals):
     m = np.mean(vals)
@@ -761,20 +785,45 @@ def inter_nrmalize_map(vals):
     np.nan_to_num(cmap, copy=False, nan=0, posinf=0, neginf=0)
 
 
-def mustache(c, chromosome,chromosome2, res, pval_weights, start, end, mask_size, distance_in_px, octave_values, st, pt):
+def diff_mustache(c1, c2, chromosome,chromosome2, res, start, end, mask_size, distance_in_px, octave_values, st, pt, pt2):
 
-    nz = np.logical_and(c != 0, np.triu(c, 4))
-    nz_temp = np.logical_and.reduce((c != 0, np.triu(c, 4)>0, np.tril(c, distance_in_px)>0))
-    if np.sum(nz) < 50:
+    nz1 = np.logical_and(c1 != 0, np.triu(c1, 4))
+    nz2 = np.logical_and(c2 != 0, np.triu(c2, 4))
+    nz = np.logical_and(nz1,nz2)
+
+    if np.sum(nz1) < 50 or np.sum(nz2)< 50:
         return []
-    c[np.tril_indices_from(c, 4)] = 2
+    c1[np.tril_indices_from(c1, 4)] = 2
+    c2[np.tril_indices_from(c2, 4)] = 2
 
     if chromosome == chromosome2:
-        c[np.triu_indices_from(c, k=(distance_in_px+1))] = 2
+        c1[np.triu_indices_from(c1, k=(distance_in_px+1))] = 2
+        c2[np.triu_indices_from(c2, k=(distance_in_px+1))] = 2
+   
+    c = np.zeros(c1.shape)
+    c[nz] = c1[nz] - c2[nz]
+    #c = c1 - c2
 
-    pAll = np.ones_like(c[nz]) * 2
-    Scales = np.ones_like(pAll)
-    vAll = np.zeros_like(pAll)
+    #pAll11 = np.ones_like(c[nz1]) * 2
+    #pPair1 =np.ones_like(c[nz1]) * 2
+    #Scales11 = np.ones_like(pAll11)
+    #vAll11 = np.zeros_like(pAll11)
+
+    #pAll22 = np.ones_like(c[nz2]) * 2
+    #pPair2 =np.ones_like(c[nz2]) * 2
+    #Scales22 = np.ones_like(pAll22)
+    #vAll22 = np.zeros_like(pAll22)
+
+    pAll1 = np.ones_like(c1[nz1]) * 2
+    pPair1 =np.ones_like(c1[nz1]) * 2
+    Scales1 = np.ones_like(pAll1)
+    vAll1 = np.zeros_like(pAll1)
+
+    pAll2 = np.ones_like(c2[nz2]) * 2
+    pPair2 = np.ones_like(c2[nz2]) * 2
+    Scales2 = np.ones_like(pAll2)
+    vAll2  = np.zeros_like(pAll2)
+
     s = 10
     #curr_filter = 1
     scales = {}
@@ -784,100 +833,207 @@ def mustache(c, chromosome,chromosome2, res, pval_weights, start, end, mask_size
         w = 2*math.ceil(2*sigma)+1
         t = (((w - 1)/2)-0.5)/sigma
         Gp = gaussian_filter(c, o, truncate=t, order=0)
+        Gp1 = gaussian_filter(c1, o, truncate=t, order=0)
+        Gp2 = gaussian_filter(c2, o, truncate=t, order=0)
         scales[o][1] = sigma
 
         sigma = o * 2**((2-1)/s)
         w = 2*math.ceil(2*sigma)+1
         t = (((w - 1)/2)-0.5)/sigma
         Gc = gaussian_filter(c, sigma, truncate=t, order=0)
+        Gc1 = gaussian_filter(c1, sigma, truncate=t, order=0)
+        Gc2 = gaussian_filter(c2, sigma, truncate=t, order=0)
         scales[o][2] = sigma
 
         Lp = Gp - Gc
         Gp = []
+        Lp1 = Gp1 - Gc1
+        Gp1 = []
+        Lp2 = Gp2 - Gc2
+        Gp2 = []
 
         sigma = o * 2**((3-1)/s)
         w = 2*math.ceil(2*sigma)+1
         t = (((w - 1)/2)-0.5)/sigma
         Gn = gaussian_filter(c, sigma, truncate=t, order=0)
+        Gn1 = gaussian_filter(c1, sigma, truncate=t, order=0)
+        Gn2 = gaussian_filter(c2, sigma, truncate=t, order=0)
         scales[o][3] = sigma
 
         #Lp = Gp - Gc
         Lc = Gc - Gn
+        Lc1 = Gc1 - Gn1
+        Lc2 = Gc2 - Gn2
 
-        locMaxP = maximum_filter(
-            Lp, footprint=np.ones((3, 3)), mode='constant')
-        locMaxC = maximum_filter(
-            Lc, footprint=np.ones((3, 3)), mode='constant')
+        locMaxP1 = maximum_filter(
+            Lp1, footprint=np.ones((3, 3)), mode='constant')
+        locMaxC1 = maximum_filter(
+            Lc1, footprint=np.ones((3, 3)), mode='constant')
+        locMaxP2 = maximum_filter(
+            Lp2, footprint=np.ones((3, 3)), mode='constant')
+        locMaxC2 = maximum_filter(
+            Lc2, footprint=np.ones((3, 3)), mode='constant')
+
         for i in range(3, s + 2):
             #curr_filter += 1
             Gc = Gn
+            Gc1 = Gn1
+            Gc2 = Gn2
 
             sigma = o * 2**((i)/s)
             w = 2*math.ceil(2*sigma)+1
             t = ((w - 1)/2 - 0.5)/sigma
             Gn = gaussian_filter(c, sigma, truncate=t, order=0)
+            Gn1 = gaussian_filter(c1, sigma, truncate=t, order=0)
+            Gn2 = gaussian_filter(c2, sigma, truncate=t, order=0)
             scales[o][i+1] = sigma
-
+            
             Ln = Gc - Gn
-            dist_params = expon.fit(np.abs(Lc[nz]))
-            pval = 1 - expon.cdf(np.abs(Lc[nz]), *dist_params)
-            locMaxN = maximum_filter(
-                Ln, footprint=np.ones((3, 3)), mode='constant')
+            Ln1 = Gc1 - Gn1
+            Ln2 = Gc2 - Gn2
 
-            willUpdate = np.logical_and \
-                .reduce((Lc[nz] > vAll, Lc[nz] == locMaxC[nz],
-                         np.logical_or(Lp[nz] == locMaxP[nz],
-                                       Ln[nz] == locMaxN[nz]),
-                         Lc[nz] > locMaxP[nz],
-                         Lc[nz] > locMaxN[nz]))
-            vAll[willUpdate] = Lc[nz][willUpdate]
-            Scales[willUpdate] = scales[o][i]
-            pAll[willUpdate] = pval[willUpdate]
-            Lp = Lc
-            Lc = Ln
-            locMaxP = locMaxC
-            locMaxC = locMaxN
+            dist_params1 = expon.fit(np.abs(Lc1[nz1]))
+            pval1 = 1 - expon.cdf(np.abs(Lc1[nz1]), *dist_params1)
+            dist_params2 = expon.fit(np.abs(Lc2[nz2]))
+            pval2 = 1 - expon.cdf(np.abs(Lc2[nz2]), *dist_params2)
+            params = norm.fit(Lc[nz])
+            diff_pval1 = norm.cdf(Lc[nz1],
+                          loc=params[0],
+                          scale=params[1])
+            #params = norm.fit(Lc[nz])
+            diff_pval2 = norm.cdf(Lc[nz2],
+                          loc=params[0],
+                          scale=params[1])
 
-    pFound = pAll != 2
-    if len(pFound) < 10000:
+            np.nan_to_num(diff_pval1, copy=False, posinf=1, neginf=1, nan=1)
+            diff_pval1[diff_pval1 > 0.5] = 1 - diff_pval1[diff_pval1 > 0.5]
+            diff_pval1*=2
+            np.nan_to_num(diff_pval2, copy=False, posinf=1, neginf=1, nan=1)
+            diff_pval2[diff_pval2 > 0.5] = 1 - diff_pval2[diff_pval2 > 0.5]
+            diff_pval2*=2
+            np.nan_to_num(pval1, copy=False, posinf=1, neginf=1, nan=1)
+            np.nan_to_num(pval2, copy=False, posinf=1, neginf=1, nan=1)
+            #pval[pval > 0.5] = 1 - pval[pval > 0.5]
+            #pval *= 2
+
+            locMaxN1 = maximum_filter(
+                Ln1, footprint=np.ones((3, 3)), mode='constant')
+            locMaxN2 = maximum_filter(
+                Ln2, footprint=np.ones((3, 3)), mode='constant')
+
+            willUpdate1 = np.logical_and \
+                .reduce((Lc1[nz1] > vAll1, Lc1[nz1] == locMaxC1[nz1],
+                         np.logical_or(Lp1[nz1] == locMaxP1[nz1],
+                                       Ln1[nz1] == locMaxN1[nz1]),
+                         Lc1[nz1] > locMaxP1[nz1],
+                         Lc1[nz1] > locMaxN1[nz1]))
+            willUpdate2 = np.logical_and \
+                .reduce((Lc2[nz2] > vAll2, Lc2[nz2] == locMaxC2[nz2],
+                         np.logical_or(Lp2[nz2] == locMaxP2[nz2],
+                                       Ln2[nz2] == locMaxN2[nz2]),
+                         Lc2[nz2] > locMaxP2[nz2],
+                         Lc2[nz2] > locMaxN2[nz2]))
+
+            vAll1[willUpdate1] = Lc1[nz1][willUpdate1]
+            Scales1[willUpdate1] = scales[o][i]
+            pAll1[willUpdate1] = pval1[willUpdate1]
+            pPair1[willUpdate1] = diff_pval1[willUpdate1]
+            Lp1 = Lc1
+            Lc1 = Ln1
+            locMaxP1 = locMaxC1
+            locMaxC1 = locMaxN1
+
+            vAll2[willUpdate2] = Lc2[nz2][willUpdate2]
+            Scales2[willUpdate2] = scales[o][i]
+            pAll2[willUpdate2] = pval2[willUpdate2]
+            pPair2[willUpdate2] = diff_pval2[willUpdate2]
+            Lp2 = Lc2
+            Lc2 = Ln2
+            locMaxP2 = locMaxC2
+            locMaxC2 = locMaxN2
+
+
+    pFound1 = pAll1 != 2
+    pFound2 = pAll2 != 2
+    if len(pFound1) < 10000 or len(pFound2) < 10000:
         return []
+    _, pCorrect1, _, _ = multipletests(pAll1[pFound1], method='fdr_bh')
+    _, pCorrect2, _, _ = multipletests(pAll2[pFound2], method='fdr_bh')
+
+    pAll1[pFound1] = pCorrect1
+    pAll2[pFound2] = pCorrect2
+
+    #_, pCorrect1, _, _ = multipletests(pPair1[pFound1], method='fdr_bh')
+    #_, pCorrect2, _, _ = multipletests(pPair2[pFound2], method='fdr_bh')
+
+    #pPair1[pFound1] = pCorrect1
+    #pPair2[pFound2] = pCorrect2
+
+    #print(np.sum(pPair1<0.2),np.sum(pPair2<0.2))
+    o1 = np.ones_like(c1)
+    o1[nz1] = pAll1
+    pair1 = np.ones_like(c1)
+    pair1[nz1] = pPair1
+
+    v1 = np.ones_like(c1)
+    v1[nz1] = vAll1
+    v2 = np.ones_like(c2)
+    v2[nz2] = vAll2
+
+    #x1, y1 = np.where(np.logical_and.reduce((o1 < pt, pair1 < pt2, v1>v2))) #change
+    #sig_count = np.sum(o1 < pt)
+    #x1, y1 = np.unravel_index(np.argsort(o1.ravel()), o1.shape)
+    x1, y1 = np.where(o1<pt)
+    so1 = np.ones_like(c1)
+    so1[nz1] = Scales1
+    #x1 = x1[:sig_count]
+    #y1 = y1[:sig_count]
+    xyScales1 = so1[x1, y1]
     
-    _, pCorrect, _, _ = multipletests(pAll[pFound], method='fdr_bh')
-    pAll[pFound] = pCorrect
 
-    #################
-    #o = np.ones_like(c)
-    #o[nz] = pAll
-    #x, y = np.where(nz_temp)
-    #o[x,y]*=np.array(pval_weights)[y-x]
-    #o[x,y]/=10
-    #pAll = o[nz]
-    #################
-    o = np.ones_like(c)
-    o[nz] = pAll
-    sig_count = np.sum(o < pt) #change
-    x, y = np.unravel_index(np.argsort(o.ravel()), o.shape)
-    so = np.ones_like(c)
-    so[nz] = Scales
-
-    x = x[:sig_count]
-    y = y[:sig_count]
-    xyScales = so[x, y]
-
-    nonsparse = x != 0
-    for i in range(len(xyScales)):
-        s = math.ceil(xyScales[i])
-        c1 = np.sum(nz[x[i]-s:x[i]+s+1, y[i]-s:y[i]+s+1]) / \
+    o2 = np.ones_like(c2)
+    o2[nz2] = pAll2
+    pair2 = np.ones_like(c2)
+    pair2[nz2] = pPair2
+    #x2, y2 = np.where(np.logical_and.reduce((o2 < pt, pair2 < pt2, v2>v1))) #change
+    #sig_count = np.sum(o2 < pt)
+    #x2, y2 = np.unravel_index(np.argsort(o2.ravel()), o2.shape)
+    x2, y2 = np.where(o2<pt)
+    so2 = np.ones_like(c2)
+    so2[nz2] = Scales2
+    #x2 = x2[:sig_count]
+    #y2 = y2[:sig_count]
+    xyScales2 = so2[x2, y2]
+    print('salam',len(x2))
+    nonsparse = x1 != 0
+    
+    for i in range(len(xyScales1)):
+        s = math.ceil(xyScales1[i])
+        cc1 = np.sum(nz1[x1[i]-s:x1[i]+s+1, y1[i]-s:y1[i]+s+1]) / \
             ((2*s+1)**2)
         s = 2*s
-        c2 = np.sum(nz[x[i]-s:x[i]+s+1, y[i]-s:y[i]+s+1]) / \
+        cc2 = np.sum(nz1[x1[i]-s:x1[i]+s+1, y1[i]-s:y1[i]+s+1]) / \
             ((2*s+1)**2)
-        if c1 < st or c2 < 0.6:
+        if cc1 < st or cc2 < 0.6:
             nonsparse[i] = False
-    x = x[nonsparse]
-    y = y[nonsparse]
+    x1 = x1[nonsparse]
+    y1 = y1[nonsparse]
 
-    if len(x) == 0:
+    nonsparse = x2 != 0
+    for i in range(len(xyScales2)):
+        s = math.ceil(xyScales2[i])
+        cc1 = np.sum(nz2[x2[i]-s:x2[i]+s+1, y2[i]-s:y2[i]+s+1]) / \
+            ((2*s+1)**2)
+        s = 2*s
+        cc2 = np.sum(nz2[x2[i]-s:x2[i]+s+1, y2[i]-s:y2[i]+s+1]) / \
+            ((2*s+1)**2)
+        if cc1 < st or cc2 < 0.6:
+            nonsparse[i] = False
+
+    x2 = x2[nonsparse]
+    y2 = y2[nonsparse]
+
+    if len(x1) == 0 or len(x2)==0:
         return []
 
     def nz_mean(vals):
@@ -885,48 +1041,76 @@ def mustache(c, chromosome,chromosome2, res, pval_weights, start, end, mask_size
 
     def diag_mean(k, map):
         return nz_mean(map[kth_diag_indices(map, k)])
+
     if chromosome == chromosome2:
-        means = np.vectorize(diag_mean, excluded=['map'])(k=y-x, map=c)
-        passing_indices = c[x, y] > 2*means #change
+        means = np.vectorize(diag_mean, excluded=['map'])(k=y1-x1, map=c1)
+        passing_indices = c1[x1, y1] > 2*means #change
         if len(passing_indices) == 0 or np.sum(passing_indices) == 0:
             return []
-        x = x[passing_indices]
-        y = y[passing_indices]
+        x1 = x1[passing_indices]
+        y1 = y1[passing_indices]
+    if chromosome == chromosome2:
+        means = np.vectorize(diag_mean, excluded=['map'])(k=y2-x2, map=c2)
+        passing_indices = c2[x2, y2] > 2*means #change
+        if len(passing_indices) == 0 or np.sum(passing_indices) == 0:
+            return []
+        x2 = x2[passing_indices]
+        y2 = y2[passing_indices]
 
-    label_matrix = np.zeros((np.max(y)+2, np.max(y)+2), dtype=np.float32)
-    label_matrix[x, y] = o[x, y] + 1
-    label_matrix[x+1, y] = 2
-    label_matrix[x+1, y+1] = 2
-    label_matrix[x, y+1] = 2
-    label_matrix[x-1, y] = 2
-    label_matrix[x-1, y-1] = 2
-    label_matrix[x, y-1] = 2
-    label_matrix[x+1, y-1] = 2
-    label_matrix[x-1, y+1] = 2
-    num_features = scipy_measurements.label(
-        label_matrix, output=label_matrix, structure=np.ones((3, 3)))
+    def get_labels(x,y,o):
+        label_matrix = np.zeros((np.max(y)+2, np.max(y)+2), dtype=np.float32)
+        label_matrix[x, y] = o[x, y] + 1
+        label_matrix[x+1, y] = 2
+        label_matrix[x+1, y+1] = 2
+        label_matrix[x, y+1] = 2
+        label_matrix[x-1, y] = 2
+        label_matrix[x-1, y-1] = 2
+        label_matrix[x, y-1] = 2
+        label_matrix[x+1, y-1] = 2
+        label_matrix[x-1, y+1] = 2
+        num_features = scipy_measurements.label(
+            label_matrix, output=label_matrix, structure=np.ones((3, 3)))
+        return label_matrix, num_features
 
-    out = []
-    for label in range(1, num_features+1):
-        indices = np.argwhere(label_matrix == label)
-        i = np.argmin(o[indices[:, 0], indices[:, 1]])
+    out1 = []
+    out2 = []
+    label_matrix1, num_features1 = get_labels(x1,y1,o1)
+    label_matrix2, num_features2 = get_labels(x2,y2,o2)
+
+    for label in range(1, num_features1+1):
+        indices = np.argwhere(label_matrix1 == label)
+        i = np.argmin(o1[indices[:, 0], indices[:, 1]])
         _x, _y = indices[i, 0], indices[i, 1]
-        out.append([_x+start, _y+start, o[_x, _y], so[_x, _y]])
+        out1.append([_x+start, _y+start, o1[_x, _y], so1[_x, _y]])
 
-    return out
+    for label in range(1, num_features2+1):
+        indices = np.argwhere(label_matrix2 == label)
+        i = np.argmin(o2[indices[:, 0], indices[:, 1]])
+        _x, _y = indices[i, 0], indices[i, 1]
+        out2.append([_x+start, _y+start, o2[_x, _y], so2[_x, _y]])
+
+    ################### report the differential ones only
+    #print(out1, start)
+    #def greater_than_NB(diff, x, y, pt2):
+    #    return np.logical_and.reduce((diff[x,y]<pt2, diff[x]))
+    diff_out1 = [o for o in out1 if pair1[o[0]-start,o[1]-start] < pt2 and v1[o[0]-start,o[1]-start]>v2[o[0]-start,o[1]-start]]  
+    diff_out2 = [o for o in out2 if pair2[o[0]-start,o[1]-start] < pt2 and v2[o[0]-start,o[1]-start]>v1[o[0]-start,o[1]-start]]
+    return out1, diff_out1, out2, diff_out2
 
 
-def regulator(f, norm_method, CHRM_SIZE, outdir, bed="",
+def regulator(f1, f2, norm_method, CHRM_SIZE, outdir, bed1="", bed2="",
               res=5000,
               sigma0=1.6,
               s=10,
-			  pt=0.1,
+	      pt=0.1,
+              pt2=0.1,
               st=0.88,
               octaves=2,
               verbose=True,
               nprocesses=4,
               distance_filter=2000000,
-              bias=False,
+              bias1=False,
+              bias2=False,
               chromosome='n',
 			  chromosome2=None):
     
@@ -944,23 +1128,41 @@ def regulator(f, norm_method, CHRM_SIZE, outdir, bed="",
 
     print("Reading contact map...")
 
-    if f.endswith(".hic"):                       
-        x, y, v = read_hic_file(f, norm_method, CHRM_SIZE, distance_in_bp, chromosome,chromosome2, res)
-    elif f.endswith(".cool"):
-        x, y, v, res = read_cooler(f, distance_in_bp, chromosome,chromosome2, norm_method)
-    elif f.endswith(".mcool"):
-        x, y, v = read_mcooler(f, distance_in_bp, chromosome,chromosome2, res, norm_method)
+    if f1.endswith(".hic"):                       
+        x1, y1, v1 = read_hic_file(f1, norm_method, CHRM_SIZE, distance_in_bp, chromosome,chromosome2, res)
+    elif f1.endswith(".cool"):
+        x1, y1, v1, res = read_cooler(f1, distance_in_bp, chromosome,chromosome2, norm_method)
+    elif f1.endswith(".mcool"):
+        x1, y1, v1 = read_mcooler(f1, distance_in_bp, chromosome,chromosome2, res, norm_method)
     else:
-        x, y, v = read_pd(f, distance_in_bp, bias, chromosome, res)
+        x1, y1, v1 = read_pd(f1, distance_in_bp, bias1, chromosome, res)
    
-    if len(v)==0:
+    if f2.endswith(".hic"):                      
+        x2, y2, v2 = read_hic_file(f2, norm_method, CHRM_SIZE, distance_in_bp, chromosome,chromosome2, res)
+    elif f2.endswith(".cool"):
+        x2, y2, v2, res2 = read_cooler(f2, distance_in_bp, chromosome,chromosome2, norm_method)
+        if res2 != res:
+            raise ValueError('Both contact maps should have the same resolution.')
+    elif f2.endswith(".mcool"):
+        x2, y2, v2 = read_mcooler(f2, distance_in_bp, chromosome,chromosome2, res, norm_method)
+    else:
+        x2, y2, v2 = read_pd(f2, distance_in_bp, bias2, chromosome, res)
+
+    
+
+    if len(v1)==0 or len(v1)==0:
         return [] 
     print("Normalizing contact map...")
     
     distance_in_px = int(math.ceil(distance_in_bp // res))
     if chromosome == chromosome2:
-        n = max(max(x), max(y)) + 1
-        pval_weights = normalize_sparse(x, y, v, res, distance_in_px)
+        n1 = max(max(x1), max(y1)) + 1
+        n2 = max(max(x2), max(y2)) + 1
+        n = max(n1,n2)
+        
+        normalize_sparse(x1, y1, v1, res, distance_in_px)
+        normalize_sparse(x2, y2, v2, res, distance_in_px)
+
         CHUNK_SIZE = max(2*distance_in_px, 2000)
         overlap_size = distance_in_px
 
@@ -976,7 +1178,7 @@ def regulator(f, norm_method, CHRM_SIZE, outdir, bed="",
                 end.append(start[-1] + CHUNK_SIZE)
             end[-1] = n
             start[-1] = end[-1] - CHUNK_SIZE
-        
+
         print("Loop calling...")
         with Manager() as manager:
             o = manager.list()
@@ -984,23 +1186,31 @@ def regulator(f, norm_method, CHRM_SIZE, outdir, bed="",
             processes = []
             for i in range(len(start)):
                 # create the currnet block
-                indx = np.logical_and.reduce((x >= start[i], x < end[i], y >= start[i],y < end[i]))
-                xc = x[indx] - start[i]
-                yc = y[indx] - start[i]
-                vc = v[indx]
-                cc = np.zeros((CHUNK_SIZE,CHUNK_SIZE))
-                cc[xc,yc] = vc
+                indx1 = np.logical_and.reduce((x1 >= start[i], x1 < end[i], y1 >= start[i],y1 < end[i]))
+                indx2 = np.logical_and.reduce((x2 >= start[i], x2 < end[i], y2 >= start[i],y2 < end[i]))
+
+                xc1 = x1[indx1] - start[i]
+                yc1 = y1[indx1] - start[i]
+                vc1 = v1[indx1]
+
+                xc2 = x2[indx2] - start[i]
+                yc2 = y2[indx2] - start[i]
+                vc2 = v2[indx2]
+
+                cc1 = np.zeros((CHUNK_SIZE,CHUNK_SIZE))
+                cc1[xc1,yc1] = vc1
+                cc2 = np.zeros((CHUNK_SIZE,CHUNK_SIZE))
+                cc2[xc2,yc2] = vc2
+                #cc = cc1 - cc2
                 #             
                 p = Process(target=process_block, args=(
-                    i, start, end, overlap_size, cc, chromosome,chromosome2, res, pval_weights, distance_in_px, octave_values, o, st, pt))
+                    i, start, end, overlap_size, cc1, cc2, chromosome,chromosome2, res, distance_in_px, octave_values, o, st, pt, pt2))
                 p.start()
                 processes.append(p)
                 if len(processes) >= nprocesses or i == (len(start) - 1):
                     for p in processes:
                         p.join()
                     processes = []
-            #o_corrected = [[e[0],e[1],e[2]/pval_weights[e[1]-e[0]],e[3]] for e in list(o)]
-                
             return list(o)
         
     else:
@@ -1010,7 +1220,7 @@ def regulator(f, norm_method, CHRM_SIZE, outdir, bed="",
 	
  
 
-def process_block(i, start, end, overlap_size, cc, chromosome,chromosome2, res, pval_weights, distance_in_px, octave_values, o, st, pt):
+def process_block(i, start, end, overlap_size, cc1, cc2, chromosome,chromosome2, res, distance_in_px, octave_values, o, st, pt, pt2):
     print("Starting block ", i+1, "/", len(start), "...", sep='')
     if i == 0:
         mask_size = -1
@@ -1018,11 +1228,21 @@ def process_block(i, start, end, overlap_size, cc, chromosome,chromosome2, res, 
         mask_size = end[i-1] - start[i]
     else:
         mask_size = overlap_size
-    loops = mustache(
-        cc, chromosome,chromosome2, res, pval_weights, start[i], end[i], mask_size, distance_in_px, octave_values, st, pt)
-    for loop in list(loops):
+    loops1, diff_loops1, loops2, diff_loops2 = diff_mustache(
+        cc1, cc2, chromosome,chromosome2, res, start[i], end[i], mask_size, distance_in_px, octave_values, st, pt, pt2)
+    for loop in list(loops1):
         if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
-            o.append([loop[0], loop[1], loop[2], loop[3]])
+            o.append([loop[0], loop[1], loop[2], loop[3], 1])
+    for loop in list(diff_loops1):
+        if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
+            o.append([loop[0], loop[1], loop[2], loop[3], 2])
+    for loop in list(loops2):
+        if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
+            o.append([loop[0], loop[1], loop[2], loop[3], 3])
+    for loop in list(diff_loops2):
+        if loop[0] >= start[i]+mask_size or loop[1] >= start[i]+mask_size:
+            o.append([loop[0], loop[1], loop[2], loop[3], 4])
+
     print("Block", i+1, "done.")
 
 
@@ -1031,11 +1251,14 @@ def main():
     args = parse_args(sys.argv[1:])
     print("\n")
 
-    f = args.f_path
-    if args.bed and args.mat:
-        f = args.mat
+    f1 = args.f_path1
+    f2 = args.f_path2
+    if args.bed1 and args.mat1:
+        f1 = args.mat1
+    if args.bed2 and args.mat2:
+        f2 = args.mat2
 
-    if not os.path.exists(f):
+    if not os.path.exists(f1) or not os.path.exists(f2):
         print("Error: Couldn't find the specified contact files")
         return
     res = parseBP(args.resolution)
@@ -1046,9 +1269,9 @@ def main():
     CHR_COOL_FLAG = False
     CHR_HIC_FLAG  = False
     if not args.chromosome or args.chromosome == 'n':
-        if f.endswith(".cool") or f.endswith(".mcool"):
+        if f1.endswith(".cool") or f1.endswith(".mcool"):
             CHR_COOL_FLAG = True
-        elif f.endswith(".hic"):
+        elif f1.endswith(".hic"):
             CHR_HIC_FLAG = True           
         elif len(args.chromosome>1):
             print("Error: For this data type you should enter only one chromosome name.")
@@ -1088,16 +1311,16 @@ def main():
     if CHR_COOL_FLAG:
         # extract all the chromosome names big enough to run mustache on
         chr_list = []
-        if f.endswith(".cool"):
-            clr = cooler.Cooler(f)
+        if f1.endswith(".cool"):
+            clr = cooler.Cooler(f1)
         else: #mcooler
-            uri = '%s::/resolutions/%s' % (f, res)
+            uri = '%s::/resolutions/%s' % (f1, res)
             clr = cooler.Cooler(uri)
         for i, chrm in enumerate(clr.chromnames):
             if clr.chromsizes[i]>1000000:
                 chr_list.append(chrm)
     elif CHR_HIC_FLAG:
-        hic = open(f, 'rb')
+        hic = open(f1, 'rb')
         chrs, resolutions, masterindex, genome, metadata = read_header(hic)
         chr_list = [chrs[i][1] for i in range(1,len(chrs))]
         chrSize_in_bp = {}
@@ -1127,30 +1350,47 @@ def main():
     for i, (chromosome,chromosome2) in enumerate(zip(chr_list,chr_list2)):
         if chrSize_in_bp:
             CHRM_SIZE = chrSize_in_bp["chr"+str(chromosome).replace('chr','')]
-        biasf = False
-        if args.biasfile:
-            if os.path.exists(args.biasfile):
-                biasf = args.biasfile
+        biasf1 = False
+        if args.biasfile1:
+            if os.path.exists(args.biasfile1):
+                biasf = args.biasfile1
             else:
-                print("Error: Couldn't find specified bias file")
+                print("Error: Couldn't find the specified bias file1")
                 return
-        o = regulator(f, args.norm_method, CHRM_SIZE, args.outdir,
-						  bed=args.bed,
+        biasf2 = False
+        if args.biasfile2:
+            if os.path.exists(args.biasfile2):
+                biasf2 = args.biasfile2
+            else:
+                print("Error: Couldn't find the specified bias file2")
+                return
+        o = regulator(f1, f2, args.norm_method, CHRM_SIZE, args.outdir,
+						  bed1=args.bed1,
+                                                  bed2=args.bed2,
 						  res=res,
 						  sigma0=args.s_z,
 						  s=args.s,
 						  verbose=args.verbose,
 						  pt=args.pt,
+                                                  pt2=args.pt2,
 						  st=args.st,
 						  distance_filter=distFilter,
 						  nprocesses=args.nprocesses,
-						  bias=biasf,
+						  bias1=biasf1,
+                                                  bias2=biasf2,
 						  chromosome=chromosome,
 						  chromosome2=chromosome2,
 						  octaves=args.octaves)
         if i==0:      
-            with open(args.outdir, 'w') as out_file:
-                out_file.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
+            with open(args.outdir+'.loop1', 'w') as out_file1:
+                out_file1.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
+            with open(args.outdir+'.diffloop1', 'w') as out_file2:
+                out_file2.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
+            with open(args.outdir+'.loop2', 'w') as out_file3:
+                out_file3.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
+            with open(args.outdir+'.diffloop2', 'w') as out_file4:
+                out_file4.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
+
         if o == []:
             print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
             old_time = time.time()
@@ -1159,12 +1399,25 @@ def main():
         #if first_chr_to_write:
         #    first_chr_to_write = False
         print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
-        with open(args.outdir, 'a') as out_file:
+        with open(args.outdir+'.loop1', 'a') as out_file1, open(args.outdir+'.diffloop1', 'a') as out_file2, open(args.outdir+'.loop2', 'a') as out_file3, open(args.outdir+'.diffloop2', 'a') as out_file4:
             #out_file.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
             for significant in o:
-                out_file.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
+                if significant[4]==1:
+                    out_file1.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
 		               str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
 		               '\t' + str(significant[3]) + '\n')
+                elif significant[4]==2:
+                    out_file2.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
+                               str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
+                               '\t' + str(significant[3]) + '\n')
+                elif significant[4]==3:
+                    out_file3.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
+                               str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
+                               '\t' + str(significant[3]) + '\n')
+                elif significant[4]==4:
+                    out_file4.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
+                               str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
+                               '\t' + str(significant[3]) + '\n')
         #else:
         #    print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-old_time)))
         #    with open(args.outdir, 'a') as out_file:
