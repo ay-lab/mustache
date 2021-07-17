@@ -12,6 +12,14 @@ Mustache is a tool for multi-scale detection of chromatin loops from Hi-C and Mi
 
 For more information, please read the full paper in <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02167-0">Genome Biology</a>. You can also download and visualize our loop calls on Epigenome Browser as a Custom Track Hub using JSON files in the WashU-output folder.
 
+Release notes corresponding to version 1.2.0 (July 16, 2021)
+----------------------------------------------------------------
+We added differential loop detection to mustache. You can find the differential loops between two contact maps (together with their corresponding loops) by running the following command:
+```bash
+python3 ./mustache/mustache/diff_mustache.py -f1 data1.hic -f2 data2.hic -pt 0.05 -pt2 0.1 -o output -r 10000 -st 0.8
+```
+where "pt2" specifies the fdr threshold for finding differential loops. This command will output 4 different files:
+
 ## Installation
 
 For convenience, we provide several ways to install Mustache.
