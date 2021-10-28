@@ -23,7 +23,6 @@ from scipy import sparse
 
 from statsmodels.stats.multitest import multipletests
 
-
 from multiprocessing import Process, Manager
 
 
@@ -235,8 +234,8 @@ def read_header(req):
         error_string = ('... This does not appear to be a HiC file; '
                        'magic string is incorrect')
         force_exit(error_string, req)
-    global version
-    version = struct.unpack(b'<i', req.read(4))[0]
+    global hic_version
+    hic_version = struct.unpack(b'<i', req.read(4))[0]
     masterindex = struct.unpack(b'<q', req.read(8))[0]
     genome = b""
     c = req.read(1)
@@ -389,66 +388,65 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     end = min(CHRM_SIZE, CHUNK_SIZE*res) #CHUNK_SIZE*res
     result = []
     val = []
-    try: 
-        while start < CHRM_SIZE:
-            print(int(start),int(end))
-            if not norm_method:
+    #try: 
+    straw_ver = int(str(straw.__version__).replace('.',''))
+    while start < CHRM_SIZE:
+        print(int(start),int(end))
+        if not norm_method:
+            if straw_ver < 1000:
                 temp = straw.straw("KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res) 
             else:
+                temp = straw.straw("observed","KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+        else:
+            if straw_ver < 1000:
                 temp = straw.straw(str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
-            if len(temp[0])==0:
-                start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
-                if end==CHRM_SIZE-1:
-                    break
-                else:
-                    end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
-                continue
-            ########################## approach 0
-            if result == []:
-                result+= temp                             
-                prev_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
             else:
-                cur_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
-                to_add_list = list(cur_block - prev_block)
-                del prev_block
-                result[0]+=  [x[0] for x in  to_add_list]
-                result[1]+=  [x[1] for x in  to_add_list]
-                result[2]+=  [x[2] for x in  to_add_list]
-                prev_block = cur_block
-                del cur_block
+                temp = straw.straw("observed",str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+        if len(temp)==0:
             start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
             if end==CHRM_SIZE-1:
                 break
             else:
                 end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
-    except:            
-        while start < CHRM_SIZE:
-            temp = straw.straw("VC", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
-            if len(temp[0])==0:
-                break
-        ########################## approach 0
-            if result == []:
-                result+= temp     
+            continue
+ 
+        if result == []:
+                                         
+            if straw_ver < 1000:
+                result+=temp
                 prev_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
             else:
+                result+= [[int(record.binX), int(record.binY), record.counts] for record in temp]
+                prev_block = set([(record.binX, record.binY, record.counts) for record in temp])
+        else:
+            if straw_ver < 1000:
                 cur_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
-                to_add_list = list(cur_block - prev_block)
-                del prev_block
-                result[0]+=  [x[0] for x in  to_add_list]
-                result[1]+=  [x[1] for x in  to_add_list]
-                result[2]+=  [x[2] for x in  to_add_list]
-                prev_block = cur_block
-                del cur_block
-            start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
-            if end==CHRM_SIZE-1:
-                break
             else:
-                end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)            
-    ###################### approach 0
+                cur_block = set([(int(record.binX), int(record.binY), record.counts) for record in temp])
+            
+            to_add_list = list(cur_block - prev_block)
+            del prev_block
+            result[0]+=  [x[0] for x in  to_add_list]
+            result[1]+=  [x[1] for x in  to_add_list]
+            result[2]+=  [x[2] for x in  to_add_list]
+            prev_block = cur_block
+            del cur_block
+        start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+        if end==CHRM_SIZE-1:
+            break
+        else:
+            end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
+    
     x = np.array(result[0]) // res
     y = np.array(result[1]) // res
     val = np.array(result[2])
-    
+    nan_indx = np.logical_or.reduce((np.isnan(result[0]),np.isnan(result[1]),np.isnan(result[2])))
+    x = x[~nan_indx]
+    y = y[~nan_indx]
+    val = val[~nan_indx]
+    x = x.astype(int)
+    y = y.astype(int)
+ 
     if len(val)==0:
         print(f'There is no contact in chrmosome {chr1} to work on.')
         return [],[],[],res
@@ -1003,10 +1001,10 @@ def regulator(f, norm_method, CHRM_SIZE, outdir, bed="",
                 
             return list(o)
         
-    else:
+    else: #interchromosomal
         n1 = max(x) + 1
         n2 = max(y) + 1
-        inter_normalize_map(v)
+        inter_normalize_map(x, y, v, res)
 	
  
 
@@ -1153,12 +1151,13 @@ def main():
                 out_file.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
         if o == []:
             print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
-            old_time = time.time()
+            start_time = time.time()
             continue
 
         #if first_chr_to_write:
         #    first_chr_to_write = False
         print("{0} loops found for chrmosome={1}, fdr<{2} in {3}sec".format(len(o),chromosome,args.pt,"%.2f" % (time.time()-start_time)))
+        
         with open(args.outdir, 'a') as out_file:
             #out_file.write( "BIN1_CHR\tBIN1_START\tBIN1_END\tBIN2_CHROMOSOME\tBIN2_START\tBIN2_END\tFDR\tDETECTION_SCALE\n")
             for significant in o:
@@ -1172,7 +1171,7 @@ def main():
         #            out_file.write(str(chromosome)+'\t' + str(significant[0]*res) + '\t' + str((significant[0]+1)*res) + '\t' +
 	#	                   str(chromosome2) + '\t' + str(significant[1]*res) + '\t' + str((significant[1]+1)*res) + '\t' + str(significant[2]) +
 	#		           '\t' + str(significant[3]) + '\n')
-        old_time = time.time()
+        start_time = time.time()
 
 
 if __name__ == '__main__':
