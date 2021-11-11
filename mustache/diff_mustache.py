@@ -696,7 +696,7 @@ def diff_mustache(c1, c2, chromosome,chromosome2, res, start, end, mask_size, di
     nz = np.logical_and(nz1,nz2)
 
     if np.sum(nz1) < 50 or np.sum(nz2)< 50:
-        return []
+        return [], [], [], []
     c1[np.tril_indices_from(c1, 4)] = 2
     c2[np.tril_indices_from(c2, 4)] = 2
 
@@ -860,7 +860,7 @@ def diff_mustache(c1, c2, chromosome,chromosome2, res, start, end, mask_size, di
     pFound1 = pAll1 != 2
     pFound2 = pAll2 != 2
     if len(pFound1) < 10000 or len(pFound2) < 10000:
-        return []
+        return [], [], [], []
     _, pCorrect1, _, _ = multipletests(pAll1[pFound1], method='fdr_bh')
     _, pCorrect2, _, _ = multipletests(pAll2[pFound2], method='fdr_bh')
 
@@ -937,7 +937,7 @@ def diff_mustache(c1, c2, chromosome,chromosome2, res, start, end, mask_size, di
     y2 = y2[nonsparse]
 
     if len(x1) == 0 or len(x2)==0:
-        return []
+        return [], [], [], []
 
     def nz_mean(vals):
         return np.mean(vals[vals != 0])
@@ -949,14 +949,14 @@ def diff_mustache(c1, c2, chromosome,chromosome2, res, start, end, mask_size, di
         means = np.vectorize(diag_mean, excluded=['map'])(k=y1-x1, map=c1)
         passing_indices = c1[x1, y1] > 2*means #change
         if len(passing_indices) == 0 or np.sum(passing_indices) == 0:
-            return []
+            return [], [], [], []
         x1 = x1[passing_indices]
         y1 = y1[passing_indices]
     if chromosome == chromosome2:
         means = np.vectorize(diag_mean, excluded=['map'])(k=y2-x2, map=c2)
         passing_indices = c2[x2, y2] > 2*means #change
         if len(passing_indices) == 0 or np.sum(passing_indices) == 0:
-            return []
+            return [], [], [], []
         x2 = x2[passing_indices]
         y2 = y2[passing_indices]
 
