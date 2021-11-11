@@ -475,7 +475,7 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
  
     if len(val)==0:
         print(f'There is no contact in chrmosome {chr1} to work on.')
-        return [],[],[],res
+        return [], [], []
     else:
         val[np.isnan(val)] = 0
 
@@ -1147,7 +1147,7 @@ def regulator(f1, f2, norm_method, CHRM_SIZE, outdir, bed1="", bed2="",
 
     
 
-    if len(v1)==0 or len(v1)==0:
+    if len(v1)==0 or len(v2)==0:
         return [] 
     print("Normalizing contact map...")
     
