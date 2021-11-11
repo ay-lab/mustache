@@ -492,6 +492,100 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     else:
         print(f'There is no contact in chrmosome {chr1} to work on.')
         return [], [], []
+
+def read_cooler(f, distance_in_bp, chr1, chr2, cooler_balance):
+    """
+    :param f: .cool file path
+    :param chr: Which chromosome to read the file for
+    :return: Numpy matrix of contact counts
+    """
+    clr = cooler.Cooler(f)
+    res = clr.binsize
+    print(f'Your cooler data resolution is {res}')
+    if chr1 not in clr.chromnames or chr2 not in clr.chromnames:
+        raise NameError('wrong chromosome name!')
+    CHRM_SIZE = clr.chromsizes[chr1]
+    CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
+    start = 0
+    end = min(CHUNK_SIZE*res, CHRM_SIZE) #CHUNK_SIZE*res
+    result = []
+    val = []
+    ###########################
+    if chr1 == chr2:
+        #try:
+            #normVec = clr.bins()['weight'].fetch(chr1)
+            #result = clr.matrix(balance=True,sparse=True).fetch(chr1)#as_pixels=True, join=True
+            while start < CHRM_SIZE:
+                print(int(start),int(end))
+                if not cooler_balance:
+                    temp = clr.matrix(balance=True,sparse=True).fetch( (chr1, int(start), int(end)))
+                else:
+                    temp = clr.matrix(balance=cooler_balance,sparse=True).fetch( (chr1, int(start), int(end)))
+                temp = sparse.triu(temp)
+                np.nan_to_num(temp, copy=False, nan=0, posinf=0, neginf=0)
+                start_in_px = int(start/res)
+                if len(temp.row)==0:
+                    start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+                    if end==CHRM_SIZE-1:
+                        break
+                    else:
+                        end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
+                    continue
+
+                if result == []:
+                    result+= [list(start_in_px+temp.row),list(start_in_px+temp.col),list(temp.data)]
+                    prev_block = set([(x,y,v) for x,y,v in zip(start_in_px+temp.row,start_in_px+temp.col,temp.data)])                    
+                else:
+                    cur_block = set([(x,y,v) for x,y,v in zip(start_in_px+temp.row,start_in_px+temp.col,temp.data)])
+                    to_add_list = list(cur_block - prev_block)
+                    del prev_block
+                    result[0]+=  [x[0] for x in  to_add_list]
+                    result[1]+=  [x[1] for x in  to_add_list]
+                    result[2]+=  [x[2] for x in  to_add_list]
+                    prev_block = cur_block
+                    del cur_block
+
+                start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+                if end==CHRM_SIZE-1:
+                    break
+                else:
+                    end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1) 
+        #except:
+            #raise NameError('Reading from the file failed!')
+            if len(result)==0:
+                print(f'There is no contact in chrmosome {chr1} to work on.')
+                return [],[],[],res
+
+            x = np.array(result[0])
+            y = np.array(result[1])
+            val = np.array(result[2])
+    else:
+       
+        result = clr.matrix(balance=True,sparse=True).fetch(chr1, chr2)
+        result = sparse.triu(result)
+        np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
+        x = result.row
+        y = result.col
+        val = result.data
+    
+    ##########################
+    if len(val)==0:
+        print(f'There is no contact in chrmosome {chr1} to work on.')
+        return [],[],[],res 
+    else:
+        val[np.isnan(val)] = 0
+ 
+    if(chr1==chr2):
+        dist_f = np.logical_and(np.abs(x-y) <= distance_in_bp/res, val > 0)
+        x = x[dist_f]
+        y = y[dist_f]
+        val = val[dist_f]
+    #return np.array(x),np.array(y),np.array(val), res, normVec
+    if len(val>0):
+        return np.array(x),np.array(y),np.array(val), res
+    else:
+        print(f'There is no contact in chrmosome {chr1} to work on.')
+        return [], [], [], res
 	
 def read_mcooler(f, distance_in_bp, chr1, chr2, res, cooler_balance):
     """
