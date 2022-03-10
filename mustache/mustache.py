@@ -11,7 +11,7 @@ from collections import defaultdict
 
 import pandas as pd
 import numpy as np
-import straw
+import hicstraw
 import cooler
 
 from scipy.stats import expon
@@ -388,22 +388,15 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     end = min(CHRM_SIZE, CHUNK_SIZE*res) #CHUNK_SIZE*res
     result = []
     val = []
-    #try: 
-    straw_ver = int(str(straw.__version__).replace('.',''))
+
     while start < CHRM_SIZE:
         print(int(start),int(end))
         if not norm_method:
-            if straw_ver < 1000:
-                temp = straw.straw("KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res) 
-            else:
-                temp = straw.straw("observed","KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+            temp = hicstraw.straw("observed", "KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
         else:
-            if straw_ver < 1000:
-                temp = straw.straw(str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
-            else:
-                temp = straw.straw("observed",str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+            temp = hicstraw.straw("observed", str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
         if len(temp)==0:
-            start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
+            start = min(start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
             if end==CHRM_SIZE-1:
                 break
             else:
@@ -412,17 +405,10 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
  
         if result == []:
                                          
-            if straw_ver < 1000:
-                result+=temp
-                prev_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
-            else:
-                result+= [[int(record.binX), int(record.binY), record.counts] for record in temp]
-                prev_block = set([(record.binX, record.binY, record.counts) for record in temp])
+            result+= [[int(record.binX), int(record.binY), record.counts] for record in temp]
+            prev_block = set([(record.binX, record.binY, record.counts) for record in temp])
         else:
-            if straw_ver < 1000:
-                cur_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
-            else:
-                cur_block = set([(int(record.binX), int(record.binY), record.counts) for record in temp])
+            cur_block = set([(int(record.binX), int(record.binY), record.counts) for record in temp])
             
             to_add_list = list(cur_block - prev_block)
             del prev_block
