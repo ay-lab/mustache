@@ -1018,6 +1018,7 @@ def main():
     elif CHR_HIC_FLAG:
         hic = hicstraw.HiCFile(f)
         chromosomes = hic.getChromosomes()
+        chr_list = [chromosomes[i].name for i in range(1, len(chromosomes))]
         chrSize_in_bp = {}
         for i in range(1, len(chromosomes)):
             chrSize_in_bp["chr" + str(chromosomes[i].name).replace("chr", '')] = chromosomes[i].length
