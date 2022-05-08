@@ -11,7 +11,7 @@ from collections import defaultdict
 
 import pandas as pd
 import numpy as np
-import straw
+import hicstraw
 import cooler
 
 from scipy.stats import expon, norm
@@ -400,34 +400,25 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
     :return: Numpy matrix of contact counts
     """
     if not CHRM_SIZE:
-        hic = open(f, 'rb')
-        chrs, resolutions, masterindex, genome, metadata = read_header(hic)
-        #chr_list = [chrs[i][1] for i in range(1,len(chrs))]         
+        hic = hicstraw.HiCFile(f)
+        chromosomes = hic.getChromosomes()
         chrSize_in_bp = {}
-        for i in range(1,len(chrs)):
-            chrSize_in_bp["chr"+chrs[i][1].replace("chr",'')] = chrs[i][2]
-        CHRM_SIZE = chrSize_in_bp["chr"+chr1.replace("chr",'')]
-
+        for i in range(1, len(chromosomes)):
+            chrSize_in_bp["chr" + str(chromosomes[i].name).replace("chr", '')] = chromosomes[i].length
+        CHRM_SIZE = chrSize_in_bp["chr" + chr1.replace("chr", '')]
     
     CHUNK_SIZE = max(2*distance_in_bp/res, 2000)
     start = 0
     end = min(CHRM_SIZE, CHUNK_SIZE*res) #CHUNK_SIZE*res
     result = []
     val = []
-    #try: 
-    straw_ver = int(str(straw.__version__).replace('.',''))
+
     while start < CHRM_SIZE:
         print(int(start),int(end))
         if not norm_method:
-            if straw_ver < 1000:
-                temp = straw.straw("KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res) 
-            else:
-                temp = straw.straw("observed","KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+            temp = hicstraw.straw("observed","KR", f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
         else:
-            if straw_ver < 1000:
-                temp = straw.straw(str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
-            else:
-                temp = straw.straw("observed",str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
+            temp = hicstraw.straw("observed",str(norm_method), f, str(chr1)+":"+str(int(start))+":"+str(int(end)),  str(chr2)+":"+str(int(start))+":"+str(int(end)), "BP", res)
         if len(temp)==0:
             start = min( start + CHUNK_SIZE*res -  distance_in_bp, CHRM_SIZE)
             if end==CHRM_SIZE-1:
@@ -436,19 +427,11 @@ def read_hic_file(f, norm_method, CHRM_SIZE,  distance_in_bp, chr1, chr2, res):
                 end = min(end + CHUNK_SIZE*res - distance_in_bp, CHRM_SIZE-1)
             continue
  
-        if result == []:
-                                         
-            if straw_ver < 1000:
-                result+=temp
-                prev_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
-            else:
-                result+= [[int(record.binX), int(record.binY), record.counts] for record in temp]
-                prev_block = set([(record.binX, record.binY, record.counts) for record in temp])
+        if result == []:                                         
+            result+= [[int(record.binX), int(record.binY), record.counts] for record in temp]
+            prev_block = set([(record.binX, record.binY, record.counts) for record in temp])
         else:
-            if straw_ver < 1000:
-                cur_block = set([(x,y,v) for x,y,v in zip(temp[0],temp[1],temp[2])])
-            else:
-                cur_block = set([(int(record.binX), int(record.binY), record.counts) for record in temp])
+            cur_block = set([(int(record.binX), int(record.binY), record.counts) for record in temp])
             
             to_add_list = list(cur_block - prev_block)
             del prev_block
