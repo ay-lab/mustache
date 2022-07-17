@@ -336,12 +336,13 @@ def read_hic_file(f, norm_method, CHRM_SIZE, distance_in_bp, chr1, chr2, res):
             continue
 
         if result == []:
-
-            result += [[int(record.binX), int(record.binY), record.counts] for record in temp]
+            cur_block = [[int(record.binX), int(record.binY), record.counts] for record in temp]
+            result.append([x[0] for x in cur_block])
+            result.append([x[1] for x in cur_block])
+            result.append([x[2] for x in cur_block])            
             prev_block = set([(record.binX, record.binY, record.counts) for record in temp])
         else:
             cur_block = set([(int(record.binX), int(record.binY), record.counts) for record in temp])
-
             to_add_list = list(cur_block - prev_block)
             del prev_block
             result[0] += [x[0] for x in to_add_list]
@@ -358,6 +359,7 @@ def read_hic_file(f, norm_method, CHRM_SIZE, distance_in_bp, chr1, chr2, res):
     x = np.array(result[0]) // res
     y = np.array(result[1]) // res
     val = np.array(result[2])
+
     nan_indx = np.logical_or.reduce((np.isnan(result[0]), np.isnan(result[1]), np.isnan(result[2])))
     x = x[~nan_indx]
     y = y[~nan_indx]
