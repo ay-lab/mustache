@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 import hicstraw
 import cooler
-from mustache import kth_diag_indices, parseBP, read_bias, read_pd, read_hic_file, read_cooler, read_cooler, get_diags, normalize_sparse, get_sep
+from mustache import kth_diag_indices, parseBP, read_bias, read_pd, read_hic_file, read_cooler, read_mcooler, get_diags, normalize_sparse, get_sep
 
 from scipy.stats import expon, norm
 from scipy.ndimage import gaussian_filter
