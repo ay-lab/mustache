@@ -791,7 +791,7 @@ def main():
             if clr.chromsizes[i]>1000000:
                 chr_list.append(chrm)
     elif CHR_HIC_FLAG:
-        hic = hicstraw.HiCFile(f)
+        hic = hicstraw.HiCFile(f1)
         chromosomes = hic.getChromosomes()
         chr_list = [chromosomes[i].name for i in range(1, len(chromosomes))]
         chrSize_in_bp = {}

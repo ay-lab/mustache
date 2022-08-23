@@ -2,6 +2,26 @@ name: mustache
 channels:
   - conda-forge
   - defaults
+
+  - libedit==3.1.20181209=hc058e9b_0
+  - zlib==1.2.11=h7b6447c_3
+  - python==3.8.1=h0371630_1
+  - ld_impl_linux-64==2.33.1=h53a641e_7
+  - wheel==0.34.2=py38_0
+  - readline==7.0=h7b6447c_5
+  - ncurses==6.2=he6710b0_0
+  - tk==8.6.8=hbc83047_0
+  - pip==20.0.2=py38_1
+  - libstdcxx-ng==9.1.0=hdf63c60_0
+  - certifi==2019.11.28=py38_0
+  - libffi==3.2.1=hd88cf55_4
+  - xz==5.2.4=h14c3975_4
+  - openssl==1.1.1d=h7b6447c_4
+  - setuptools==45.2.0=py38_0
+  - sqlite==3.31.1=h7b6447c_0
+  - libgcc-ng==9.1.0=hdf63c60_0
+  - ca-certificates==2020.1.1=0
+  - _libgcc_mutex==0.1=main
 dependencies:
   - _libgcc_mutex=0.1=main
   - ca-certificates=2020.1.1=0
