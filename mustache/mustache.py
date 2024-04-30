@@ -310,7 +310,11 @@ def read_hic_file(f, norm_method, CHRM_SIZE, distance_in_bp, chr1, chr2, res):
         chrSize_in_bp = {}
         for i in range(1, len(chromosomes)):
             chrSize_in_bp["chr" + str(chromosomes[i].name).replace("chr", '')] = chromosomes[i].length
-        CHRM_SIZE = chrSize_in_bp["chr" + chr1.replace("chr", '')]
+        chr_key = "chr" + chr1.replace("chr", '')
+        if chr_key in chrSize_in_bp:
+            CHRM_SIZE = chrSize_in_bp[chr_key]
+        else:
+            raise NameError('wrong chromosome name!')
 
     CHUNK_SIZE = max(2 * distance_in_bp / res, 2000)
     start = 0
@@ -350,11 +354,17 @@ def read_hic_file(f, norm_method, CHRM_SIZE, distance_in_bp, chr1, chr2, res):
             result[2] += [x[2] for x in to_add_list]
             prev_block = cur_block
             del cur_block
+
+
         start = min(start + CHUNK_SIZE * res - distance_in_bp, CHRM_SIZE)
         if end == CHRM_SIZE - 1:
             break
         else:
             end = min(end + CHUNK_SIZE * res - distance_in_bp, CHRM_SIZE - 1)
+
+    if len(result) == 0:
+        print(f'There is no contact in chrmosome {chr1} to work on.')
+        return [], [], []
 
     x = np.array(result[0]) // res
     y = np.array(result[1]) // res
