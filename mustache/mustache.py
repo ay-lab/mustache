@@ -686,7 +686,7 @@ def normalize_sparse(x, y, v, resolution, distance_in_px):
     return pval_weights
 
 
-def inter_nrmalize_map(vals):
+def inter_normalize_map(vals):
     m = np.mean(vals)
     s = np.std(vals)
     cmap -= m
