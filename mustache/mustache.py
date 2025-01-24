@@ -1007,12 +1007,12 @@ def main():
     elif distFilter < 200 * res:
         print("The distance limit is set to {}bp".format(200 * res))
         distFilter = 200 * res
-    elif distFilter > 2000 * res:
-        print("The distance limit is set to {}bp".format(2000 * res))
-        distFilter = 2000 * res
-    elif distFilter > 2000000:
-        distFilter = 2000000
-        print("The distance limit is set to 2Mbp")
+    elif distFilter > 10000 * res:
+        print("The distance limit is set to {}bp".format(10000 * res))
+        distFilter = 10000 * res
+    elif distFilter > 10000000:
+        distFilter = 10000000
+        print("The distance limit is set to 10Mbp")
 
     # distFilter = 4000000
     chrSize_in_bp = False
